@@ -75,7 +75,7 @@
 		    <nameValuePair>
 		        <name>InputDirectory</name>
 		        <value>
-		            <string>/home/guillaume/workspace/uima-nltk/data/input</string>
+		            <string>././data/input</string>
 		        </value>
 		    </nameValuePair>
             <nameValuePair>
