@@ -4,11 +4,7 @@ import java.util.ArrayList;
 import java.util.Observable;
 import java.util.Observer;
 
-import org.apache.uima.aae.client.UimaAsynchronousEngine;
 import org.apache.uima.cas.CAS;
-import org.apache.uima.cas.FSIterator;
-import org.apache.uima.cas.text.AnnotationFS;
-import org.apache.uima.cas.text.AnnotationIndex;
 
 public class Pipeline implements Observer{
 
@@ -40,7 +36,6 @@ public class Pipeline implements Observer{
 	}
 	
 	private void decoupagePhrase(ArrayList<CAS> sauveCas) throws Exception {
-		System.out.println("Pipeline : "+sauveCas.isEmpty());
 		/* On met les param par défaut de ce traitement */
 		rrae = new RRAAEPerso("WhitespaceTokenizerQueue", sauveCas);
 		rrae.addObserver(this);
@@ -55,20 +50,18 @@ public class Pipeline implements Observer{
 	}
 
 	@Override
-	public void update(Observable arg0, Object arg1) {
-		if(arg1.toString() == "stop"){
-			for(CAS cas: listeCAS){
-				System.out.println(cas.getDocumentText());
-				AnnotationIndex<AnnotationFS> annotIndex  = cas.getAnnotationIndex();
-				FSIterator<AnnotationFS> iterator = annotIndex.iterator();
-				while(iterator.hasNext()){
-					System.out.println(iterator.get().getType().toString());
-				}
-			}
+	public void update(Observable arg0, Object arg1){
+	/*	HashMap<String, CAS> map = (HashMap<String, CAS>) arg1;
+		
+		CasCopier.copyCas(map.get("casPlein"),map.get("casVide"), true);
+		listeCAS.add(map.get("casVide"));
+		System.out.println("CAS vide ?");
+		System.out.println(listeCAS.get(0).getDocumentText() == null);
+	*/
+		if(arg1 != null){
+			listeCAS.add((CAS) arg1);
 		}else{
-			CAS cas = (CAS) arg1;
-			//On ajoute le CAS à notre liste de CAS
-			listeCAS.add(cas);
+			System.out.println("C'est null !");
 		}
 	}
 }

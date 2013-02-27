@@ -1,6 +1,5 @@
 package org.apache.uima.nltk.impl;
 
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -26,9 +25,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.uima.UIMAFramework;
@@ -37,371 +39,457 @@ import org.apache.uima.aae.client.UimaAsBaseCallbackListener;
 import org.apache.uima.aae.client.UimaAsynchronousEngine;
 import org.apache.uima.adapter.jms.client.BaseUIMAAsynchronousEngine_impl;
 import org.apache.uima.cas.CAS;
+import org.apache.uima.cas.FSIndex;
 import org.apache.uima.cas.FSIterator;
 import org.apache.uima.cas.Feature;
 import org.apache.uima.cas.FeatureStructure;
 import org.apache.uima.cas.StringArrayFS;
 import org.apache.uima.cas.Type;
 import org.apache.uima.cas.impl.XmiCasSerializer;
+import org.apache.uima.cas.text.AnnotationFS;
+import org.apache.uima.cas.text.AnnotationIndex;
 import org.apache.uima.collection.CollectionReader;
 import org.apache.uima.collection.CollectionReaderDescription;
 import org.apache.uima.collection.EntityProcessStatus;
 import org.apache.uima.jcas.cas.StringArray;
+import org.apache.uima.jcas.tcas.Annotation;
 import org.apache.uima.nltk.utils.Cas2ArrayListString;
 import org.apache.uima.resource.ResourceProcessException;
+import org.apache.uima.util.CasCopier;
 import org.apache.uima.util.ProcessTraceEvent;
 import org.apache.uima.util.XMLInputSource;
 
 /**
- * Example application that calls a Remote Asynchronous Analysis Engine on a collection.
+ * Example application that calls a Remote Asynchronous Analysis Engine on a
+ * collection.
  * <p>
  * Arguments: brokerUrl endpoint [options] [-t Timeout] [-i]
  * <p>
- * This connects to a remote AE at specified brokerUrl and endpoint (which must match what is in the
- * service's deployment descriptor. The following optional arguments are accepted:
+ * This connects to a remote AE at specified brokerUrl and endpoint (which must
+ * match what is in the service's deployment descriptor. The following optional
+ * arguments are accepted:
  * <ul>
- * <li>-d Specifies a deployment descriptor. The specified service will be deployed before
- * processing begin, and the service will be undeployed after processing completes. Multiple -d
- * entries can be given.</li>
- * <li>-c Specifies a CollectionReader descriptor. The client will read CASes from the
- * CollectionReader and send them to the service for processing. If this option is ommitted, one
- * empty CAS will be sent to the service (useful for services containing a CAS Multiplier acting as
- * a collection reader).</li>
- * <li>-p Specifies CAS pool size, which determines the maximum number of requests that can be
- * outstanding.</li>
+ * <li>-d Specifies a deployment descriptor. The specified service will be
+ * deployed before processing begin, and the service will be undeployed after
+ * processing completes. Multiple -d entries can be given.</li>
+ * <li>-c Specifies a CollectionReader descriptor. The client will read CASes
+ * from the CollectionReader and send them to the service for processing. If
+ * this option is ommitted, one empty CAS will be sent to the service (useful
+ * for services containing a CAS Multiplier acting as a collection reader).</li>
+ * <li>-p Specifies CAS pool size, which determines the maximum number of
+ * requests that can be outstanding.</li>
  * <li>-f Specifies the initial FS heap size in bytes of each CAS in the pool.</li>
- * <li>-o Specifies an Output Directory. All CASes received by the client's CallbackListener will be
- * serialized to XMI in the specified OutputDir. If ommitted, no XMI files will be output.</li>
- * <li>-t Specifies a timeout period in seconds. If a CAS does not return within this time period it
- * is considered an error. By default there is no timeout, so the client will wait forever.</li>
- * <li>-i Causes the client to ignore errors returned from the service. If not specified, the client
- * terminates on the first error.</li>
+ * <li>-o Specifies an Output Directory. All CASes received by the client's
+ * CallbackListener will be serialized to XMI in the specified OutputDir. If
+ * ommitted, no XMI files will be output.</li>
+ * <li>-t Specifies a timeout period in seconds. If a CAS does not return within
+ * this time period it is considered an error. By default there is no timeout,
+ * so the client will wait forever.</li>
+ * <li>-i Causes the client to ignore errors returned from the service. If not
+ * specified, the client terminates on the first error.</li>
  * <li>-log Output details on each process request.</li>
- * <li>-uimaEeDebug true causes various debugging things to happen, including *not* deleting the
- * generated spring file generated by running dd-2-spring. This parameter only affects deployments
- * specified using the -d parameter that follow it in the command line sequence.</li>
+ * <li>-uimaEeDebug true causes various debugging things to happen, including
+ * *not* deleting the generated spring file generated by running dd-2-spring.
+ * This parameter only affects deployments specified using the -d parameter that
+ * follow it in the command line sequence.</li>
  * </ul>
  */
 
 /*
  * 
- * ETAPES UTILISATION 
+ * ETAPES UTILISATION
  * 
- * 		1 - LANCER UN BROKER SUR SA MACHINE (apache-uima-as-2.4.0\bin\startBroker) et r�cup�rer l'adresse TCP OU BIEN r�cup�rer l'adresse TCP du broker lanc� sur une machine distante
+ * 1 - LANCER UN BROKER SUR SA MACHINE (apache-uima-as-2.4.0\bin\startBroker) et
+ * r�cup�rer l'adresse TCP OU BIEN r�cup�rer l'adresse TCP du broker lanc� sur
+ * une machine distante
  * 
- * 		2 - LANCER ourRunRemoteAsyncAE.java
- *  
- * 
+ * 2 - LANCER ourRunRemoteAsyncAE.java
  */
 
+public class RRAAEPerso extends Observable {
 
+	// A initialiser dans le constructer en arguments (valeur attendue
+	// tcp://Alex-VAIO:61616)
+	private String brokerUrl = "tcp://localhost:61616";
 
-public class RRAAEPerso extends Observable{
-	
-  //A initialiser dans le constructer en arguments (valeur attendue  tcp://Alex-VAIO:61616)
-  private String brokerUrl = "tcp://localhost:61616";
+	private String endpoint;
 
-  private String endpoint;
+	private File collectionReaderDescriptor = new File(
+			"descriptors/collection_reader/FileSystemCollectionReaderOurRunRemoteAsyncAE.xml");
 
-  private File collectionReaderDescriptor = new File("descriptors/collection_reader/FileSystemCollectionReaderOurRunRemoteAsyncAE.xml");
+	private int casPoolSize = 50;
 
-  private int casPoolSize = 50;
+	private int fsHeapSize = 2000000;
 
-  private int fsHeapSize = 2000000;
+	private File outputDir = null;
 
-  private File outputDir = null;
+	private int timeout = 0;
 
-  private int timeout = 0;
+	private int getmeta_timeout = 60;
 
-  private int getmeta_timeout = 60;
+	private int cpc_timeout = 0;
 
-  private int cpc_timeout = 0;
+	private boolean ignoreErrors = false;
 
-  private boolean ignoreErrors = false;
+	private boolean logCas = false;
 
-  private boolean logCas = false;
-  
-  private int indexCas = 0;
-  
-  private ArrayList<CAS> listeCas;
-  
-  /**
-   * Start time of the processing - used to compute elapsed time.
-   */
-  private static long mStartTime = System.nanoTime() / 1000000;
+	private int indexCas = 0;
 
-  private UimaAsynchronousEngine uimaEEEngine = null;
-  
-  
+	private ArrayList<CAS> listeCas;
 
-  Map<String, Object> appCtx;
+	/**
+	 * Start time of the processing - used to compute elapsed time.
+	 */
+	private static long mStartTime = System.nanoTime() / 1000000;
 
-  // For logging CAS activity
-  private ConcurrentHashMap casMap = new ConcurrentHashMap();
+	private UimaAsynchronousEngine uimaEEEngine = null;
 
-  /**
-   * Constructor for the class. Parses command line arguments and sets the values of fields in this
-   * instance. If command line is invalid prints a message and calls System.exit().
-   * 
-   * @param args
-   *          command line arguments into the program - see class description
-   */
-  
-  public RRAAEPerso(String endpoint, ArrayList<CAS> listeCas) throws Exception {
-	this.endpoint = endpoint;
-    appCtx = new HashMap<String, Object>();
-    appCtx.put(UimaAsynchronousEngine.DD2SpringXsltFilePath, System.getenv("UIMA_HOME") + "/bin/dd2spring.xsl");
-    appCtx.put(UimaAsynchronousEngine.SaxonClasspath, "file:" + System.getenv("UIMA_HOME") + "/saxon/saxon8.jar");
-    System.setProperty("defaultBrokerURL", brokerUrl);
- 
-    this.listeCas = listeCas;
-    System.out.println("RRAE: "+listeCas.isEmpty());
-    
-	uimaEEEngine = new BaseUIMAAsynchronousEngine_impl();
-	
-   
-    //TODO VERIFY IT
- //   uimaEEEngine.deploy(deployementDescriptor, appCtx);
-               
-  }
+	Map<String, Object> appCtx;
 
-  public void run() throws Exception {
-    // add Collection Reader if specified
-	if(listeCas.isEmpty()){
-		System.out.println("Recupération avec Collection Reader");
-	    CollectionReaderDescription collectionReaderDescription = UIMAFramework.getXMLParser().parseCollectionReaderDescription(new XMLInputSource(collectionReaderDescriptor));
+	// For logging CAS activity
+	private ConcurrentHashMap casMap = new ConcurrentHashMap();
 
-	    CollectionReader collectionReader = UIMAFramework.produceCollectionReader(collectionReaderDescription);
-	    uimaEEEngine.setCollectionReader(collectionReader);
+	/**
+	 * Constructor for the class. Parses command line arguments and sets the
+	 * values of fields in this instance. If command line is invalid prints a
+	 * message and calls System.exit().
+	 * 
+	 * @param args
+	 *            command line arguments into the program - see class
+	 *            description
+	 */
+
+	public RRAAEPerso(String endpoint, ArrayList<CAS> listeCas)
+			throws Exception {
+		this.endpoint = endpoint;
+		appCtx = new HashMap<String, Object>();
+		appCtx.put(UimaAsynchronousEngine.DD2SpringXsltFilePath,
+				System.getenv("UIMA_HOME") + "/bin/dd2spring.xsl");
+		appCtx.put(UimaAsynchronousEngine.SaxonClasspath,
+				"file:" + System.getenv("UIMA_HOME") + "/saxon/saxon8.jar");
+		System.setProperty("defaultBrokerURL", brokerUrl);
+
+		this.listeCas = listeCas;
+		System.out.println("RRAE: " + listeCas.isEmpty());
+
+		uimaEEEngine = new BaseUIMAAsynchronousEngine_impl();
+
+		// TODO VERIFY IT
+		// uimaEEEngine.deploy(deployementDescriptor, appCtx);
+
 	}
 
-   
-    uimaEEEngine.addStatusCallbackListener(new StatusCallbackListenerImpl());
+	public void run() throws Exception {
+		// add Collection Reader if specified
+		if (listeCas.isEmpty()) {
+			System.out.println("Recupération avec Collection Reader");
+			CollectionReaderDescription collectionReaderDescription = UIMAFramework
+					.getXMLParser().parseCollectionReaderDescription(
+							new XMLInputSource(collectionReaderDescriptor));
 
-    // set server URI and Endpoint
-    // Add Broker URI
-    appCtx.put(UimaAsynchronousEngine.ServerUri, brokerUrl);
-    // Add Queue Name
-    appCtx.put(UimaAsynchronousEngine.Endpoint, endpoint);
-    // Add timeouts (UIMA EE expects it in milliseconds, but we use seconds on the command line)
-    appCtx.put(UimaAsynchronousEngine.Timeout, timeout * 1000);
-    appCtx.put(UimaAsynchronousEngine.GetMetaTimeout, getmeta_timeout * 1000);
-    appCtx.put(UimaAsynchronousEngine.CpcTimeout, cpc_timeout * 1000);
+			CollectionReader collectionReader = UIMAFramework
+					.produceCollectionReader(collectionReaderDescription);
+			uimaEEEngine.setCollectionReader(collectionReader);
+		}
 
-    // Add the Cas Pool Size and initial FS heap size
-    appCtx.put(UimaAsynchronousEngine.CasPoolSize, casPoolSize);
-    appCtx.put(UIMAFramework.CAS_INITIAL_HEAP_SIZE, Integer.valueOf(fsHeapSize / 4).toString());
+		uimaEEEngine
+				.addStatusCallbackListener(new StatusCallbackListenerImpl());
 
-    // initialize
-    uimaEEEngine.initialize(appCtx);
-    
-    // run
-    if(listeCas.isEmpty()){
-        uimaEEEngine.process();
-    }
+		// set server URI and Endpoint
+		// Add Broker URI
+		appCtx.put(UimaAsynchronousEngine.ServerUri, brokerUrl);
+		// Add Queue Name
+		appCtx.put(UimaAsynchronousEngine.Endpoint, endpoint);
+		// Add timeouts (UIMA EE expects it in milliseconds, but we use seconds
+		// on the command line)
+		appCtx.put(UimaAsynchronousEngine.Timeout, timeout * 1000);
+		appCtx.put(UimaAsynchronousEngine.GetMetaTimeout,
+				getmeta_timeout * 1000);
+		appCtx.put(UimaAsynchronousEngine.CpcTimeout, cpc_timeout * 1000);
 
-    
-    if(!listeCas.isEmpty()){
-		System.out.println("Récuperation avec liste CAS");
-	    uimaEEEngine.sendCAS(listeCas.get(indexCas));
+		// Add the Cas Pool Size and initial FS heap size
+		appCtx.put(UimaAsynchronousEngine.CasPoolSize, casPoolSize);
+		appCtx.put(UIMAFramework.CAS_INITIAL_HEAP_SIZE,
+				Integer.valueOf(fsHeapSize / 4).toString());
+
+		// initialize
+		uimaEEEngine.initialize(appCtx);
+
+		// run
+		if (listeCas.isEmpty()) {
+			uimaEEEngine.process();
+		}
+
+		if (!listeCas.isEmpty()) {
+			System.out.println("Récuperation avec liste CAS");
+			uimaEEEngine.sendCAS(listeCas.get(indexCas));
+		}
+
+		// send an empty CAS
+		/*
+		 * CAS cas = uimaEEEngine.getCAS(); uimaEEEngine.sendCAS(cas);
+		 * uimaEEEngine.collectionProcessingComplete();
+		 */
+		if (listeCas.isEmpty()) {
+			uimaEEEngine.stop();
+		}
+
 	}
 
+	/**
+	 * Callback Listener. Receives event notifications from CPE.
+	 * 
+	 * 
+	 */
+	class StatusCallbackListenerImpl extends UimaAsBaseCallbackListener {
+		int entityCount = 0;
 
+		long size = 0;
 
+		/**
+		 * Called when the initialization is completed.
+		 * 
+		 * @see org.apache.uima.collection.processing.StatusCallbackListener#initializationComplete()
+		 */
+		public void initializationComplete(EntityProcessStatus aStatus) {
+			if (aStatus != null && aStatus.isException()) {
+				System.err.println("Error on getMeta call to remote service:");
+				List exceptions = aStatus.getExceptions();
+				for (int i = 0; i < exceptions.size(); i++) {
+					((Throwable) exceptions.get(i)).printStackTrace();
+				}
+				System.err.println("Terminating Client...");
+				stop();
 
-    
+			}
+			System.out.println("UIMA AS Service Initialization Complete");
+		}
 
-    
-      // send an empty CAS
-    /*  CAS cas = uimaEEEngine.getCAS();
-      uimaEEEngine.sendCAS(cas);
-      uimaEEEngine.collectionProcessingComplete();*/
-    if(listeCas.isEmpty()){
-        uimaEEEngine.stop();	
-    }
-
-  }
-
-
-  /**
-   * Callback Listener. Receives event notifications from CPE.
-   * 
-   * 
-   */
-  class StatusCallbackListenerImpl extends UimaAsBaseCallbackListener {
-    int entityCount = 0;
-
-    long size = 0;
-
-    /**
-     * Called when the initialization is completed.
-     * 
-     * @see org.apache.uima.collection.processing.StatusCallbackListener#initializationComplete()
-     */
-    public void initializationComplete(EntityProcessStatus aStatus) {
-      if (aStatus != null && aStatus.isException()) {
-        System.err.println("Error on getMeta call to remote service:");
-        List exceptions = aStatus.getExceptions();
-        for (int i = 0; i < exceptions.size(); i++) {
-          ((Throwable) exceptions.get(i)).printStackTrace();
-        }
-        System.err.println("Terminating Client...");
-        stop();
-        
-      }
-      System.out.println("UIMA AS Service Initialization Complete");
-    }
-    private void stop() {
-      try {
-        uimaEEEngine.stop();
-      } catch( Exception e) {
-        
-      }
-      System.exit(1);
-      
-    }
-    /**
-     * Called when the collection processing is completed.
-     * 
-     * @see org.apache.uima.collection.processing.StatusCallbackListener#collectionProcessComplete()
-     */
-    public void collectionProcessComplete(EntityProcessStatus aStatus) {
-
-      if (aStatus != null && aStatus.isException()) {
-        System.err.println("Error on collection process complete call to remote service:");
-        List exceptions = aStatus.getExceptions();
-        for (int i = 0; i < exceptions.size(); i++) {
-          ((Throwable) exceptions.get(i)).printStackTrace();
-        }
-        System.err.println("Terminating Client...");
-        stop();
-      }
-      System.out.print("Completed " + entityCount + " documents");
-      if (size > 0) {
-        System.out.print("; " + size + " characters");
-      }
-      System.out.println();
-      long elapsedTime = System.nanoTime() / 1000000 - mStartTime;
-      System.out.println("Time Elapsed : " + elapsedTime + " ms ");
-
-      String perfReport = uimaEEEngine.getPerformanceReport();
-      if (perfReport != null) {
-        System.out.println("\n\n ------------------ PERFORMANCE REPORT ------------------\n");
-        System.out.println(uimaEEEngine.getPerformanceReport());
-      }
-      
-      // stop the JVM.
-     // stop();
-    }
-
-    /**
-     * Called when the processing of a Document is completed. <br>
-     * The process status can be looked at and corresponding actions taken.
-     * 
-     * @param aCas
-     *          CAS corresponding to the completed processing
-     * @param aStatus
-     *          EntityProcessStatus that holds the status of all the events for aEntity
-     */
-    public void entityProcessComplete(CAS aCas, EntityProcessStatus aStatus) {
-
-      //A chaque fois qu'un fichié a été traité, on notifie le pipeline qui va recuperer le fichier
-      setChanged();
-      notifyObservers(aCas);
-      
-      if (aStatus != null) {
-    	
-        if (aStatus.isException()) {
-          System.err.println("Error on process CAS call to remote service:");
-          List exceptions = aStatus.getExceptions();
-          for (int i = 0; i < exceptions.size(); i++) {
-            ((Throwable) exceptions.get(i)).printStackTrace();
-          }
-          if (!ignoreErrors) {
-            System.err.println("Terminating Client...");
-            stop();
-          }
-        }
-
-        if (logCas) {
-          String ip = "no IP";
-          List eList = aStatus.getProcessTrace().getEventsByComponentName("UimaEE", false);
-          for (int e = 0; e < eList.size(); e++) {
-            ProcessTraceEvent event = (ProcessTraceEvent) eList.get(e);
-            if (event.getDescription().equals("Service IP")) {
-              ip = event.getResultMessage();
-            }
-          }
-          String casId = ((UimaASProcessStatus) aStatus).getCasReferenceId();
-          if (casId != null) {
-            long current = System.nanoTime() / 1000000 - mStartTime;
-            if (casMap.containsKey(casId)) {
-              Object value = casMap.get(casId);
-              if (value != null && value instanceof Long) {
-                long start = ((Long) value).longValue();
-                System.out.println(ip + "\t" + start + "\t" + (current - start));
-              }
-            }
-          }
-
-        } else {
-          System.out.print(".");
-          if (0 == (entityCount + 1) % 50) {
-            System.out.print((entityCount + 1) + " processed\n");
-          }
-        }
-      }
-      
-  	  //TODO TRAITER LES ANNOTATIONS
-      ArrayList<String> listOfWords = Cas2ArrayListString.fromCas2ArrayString4Sentence(aCas);
-      
-      // System.out.println(listOfWords.toString());
-      
-      // update stats
-      entityCount++;
-      String docText = aCas.getDocumentText();
-      if (docText != null) {
-        size += docText.length();
-      }
-      
-      // Called just before sendCas with next CAS from collection reader
-      if(!listeCas.isEmpty()){
-    	  indexCas ++;
-    	  if(indexCas < listeCas.size()){
-        	  try {
-      			uimaEEEngine.sendCAS(listeCas.get(indexCas));
-      		} catch (ResourceProcessException e) {
-      			// TODO Auto-generated catch block
-      			e.printStackTrace();    		  
-    	  }
-		}else{
-  	      setChanged();
-  	      notifyObservers("stop");
-		    try {
+		private void stop() {
+			try {
 				uimaEEEngine.stop();
 			} catch (Exception e) {
+
+			}
+			System.exit(1);
+
+		}
+
+		/**
+		 * Called when the collection processing is completed.
+		 * 
+		 * @see org.apache.uima.collection.processing.StatusCallbackListener#collectionProcessComplete()
+		 */
+		public void collectionProcessComplete(EntityProcessStatus aStatus) {
+
+			if (aStatus != null && aStatus.isException()) {
+				System.err
+						.println("Error on collection process complete call to remote service:");
+				List exceptions = aStatus.getExceptions();
+				for (int i = 0; i < exceptions.size(); i++) {
+					((Throwable) exceptions.get(i)).printStackTrace();
+				}
+				System.err.println("Terminating Client...");
+				stop();
+			}
+			System.out.print("Completed " + entityCount + " documents");
+			if (size > 0) {
+				System.out.print("; " + size + " characters");
+			}
+			System.out.println();
+			long elapsedTime = System.nanoTime() / 1000000 - mStartTime;
+			System.out.println("Time Elapsed : " + elapsedTime + " ms ");
+
+			String perfReport = uimaEEEngine.getPerformanceReport();
+			if (perfReport != null) {
+				System.out
+						.println("\n\n ------------------ PERFORMANCE REPORT ------------------\n");
+				System.out.println(uimaEEEngine.getPerformanceReport());
+			}
+
+			// stop the JVM.
+			// stop();
+		}
+
+		/**
+		 * Called when the processing of a Document is completed. <br>
+		 * The process status can be looked at and corresponding actions taken.
+		 * 
+		 * @param aCas
+		 *            CAS corresponding to the completed processing
+		 * @param aStatus
+		 *            EntityProcessStatus that holds the status of all the
+		 *            events for aEntity
+		 */
+		public void entityProcessComplete(CAS aCas, EntityProcessStatus aStatus) {
+
+			System.out.println(aCas);
+			// A chaque fois qu'un fichié a été traité, on notifie le pipeline
+			// qui va recuperer le fichier
+			setChanged();
+		/*	HashMap<String, CAS> map = new HashMap<String, CAS>();
+			try {
+				map.put("casVide", uimaEEEngine.getCAS());
+			} catch (Exception e1) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				e1.printStackTrace();
+			}
+			map.put("casPlein", aCas);*/
+			/*
+			try {
+				notifyObservers(getCopyCas(aCas));
+
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+*/
+			if (aStatus != null) {
+
+				if (aStatus.isException()) {
+					System.err
+							.println("Error on process CAS call to remote service:");
+					List exceptions = aStatus.getExceptions();
+					for (int i = 0; i < exceptions.size(); i++) {
+						((Throwable) exceptions.get(i)).printStackTrace();
+					}
+					if (!ignoreErrors) {
+						System.err.println("Terminating Client...");
+						stop();
+					}
+				}
+
+				if (logCas) {
+					String ip = "no IP";
+					List eList = aStatus.getProcessTrace()
+							.getEventsByComponentName("UimaEE", false);
+					for (int e = 0; e < eList.size(); e++) {
+						ProcessTraceEvent event = (ProcessTraceEvent) eList
+								.get(e);
+						if (event.getDescription().equals("Service IP")) {
+							ip = event.getResultMessage();
+						}
+					}
+					String casId = ((UimaASProcessStatus) aStatus)
+							.getCasReferenceId();
+					if (casId != null) {
+						long current = System.nanoTime() / 1000000 - mStartTime;
+						if (casMap.containsKey(casId)) {
+							Object value = casMap.get(casId);
+							if (value != null && value instanceof Long) {
+								long start = ((Long) value).longValue();
+								System.out.println(ip + "\t" + start + "\t"
+										+ (current - start));
+							}
+						}
+					}
+
+				} else {
+					System.out.print(".");
+					if (0 == (entityCount + 1) % 50) {
+						System.out.print((entityCount + 1) + " processed\n");
+					}
+				}
+			}
+
+			// TODO TRAITER LES ANNOTATIONS
+			ArrayList<String> listOfWords = Cas2ArrayListString
+					.fromCas2ArrayString4Sentence(aCas);
+
+			// System.out.println(listOfWords.toString());
+
+			// update stats
+			entityCount++;
+			String docText = aCas.getDocumentText();
+			if (docText != null) {
+				size += docText.length();
+			}
+
+			// Called just before sendCas with next CAS from collection reader
+			if (!listeCas.isEmpty()) {
+				indexCas++;
+				if (indexCas < listeCas.size()) {
+					try {
+						uimaEEEngine.sendCAS(listeCas.get(indexCas));
+					} catch (ResourceProcessException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				} else {
+					setChanged();
+					notifyObservers("stop");
+					try {
+						uimaEEEngine.stop();
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
 			}
 		}
-      }
-    }
 
-    public void onBeforeMessageSend(UimaASProcessStatus status) {
-      long current = System.nanoTime() / 1000000 - mStartTime;
-      casMap.put(status.getCasReferenceId(), current);
-    }
-    /**
-     * This method is called when a CAS is picked up by remote UIMA AS
-     * from a queue right before processing. This callback identifies
-     * on which machine the CAS is being processed and by which UIMA AS
-     * service (PID).
-     */
-    public void onBeforeProcessCAS(UimaASProcessStatus status, String nodeIP, String pid) {
-      
-    }
+		public void onBeforeMessageSend(UimaASProcessStatus status) {
+			long current = System.nanoTime() / 1000000 - mStartTime;
+			casMap.put(status.getCasReferenceId(), current);
+		}
 
-  }
+		/**
+		 * This method is called when a CAS is picked up by remote UIMA AS from
+		 * a queue right before processing. This callback identifies on which
+		 * machine the CAS is being processed and by which UIMA AS service
+		 * (PID).
+		 */
+		public void onBeforeProcessCAS(UimaASProcessStatus status,
+				String nodeIP, String pid) {
 
+		}
+
+	}
+
+	public CAS getCopyCas(CAS cas) throws Exception {
+
+		ArrayList<String> listeAnnotations = new ArrayList<String>();
+		AnnotationIndex<AnnotationFS> annotIndex = cas.getAnnotationIndex();
+		FSIterator<AnnotationFS> iterr = annotIndex.iterator();
+		System.out.println("pouet");
+		while(iterr.hasNext()){
+			String annot = iterr.get().getType().toString();
+			if(!listeAnnotations.contains(annot)){
+				listeAnnotations.add(annot);
+			}
+			iterr.moveToNext();
+		}
+		// procure a new CAS if we don't have one already
+		StringBuffer mDocBuf = new StringBuffer();
+		CAS mMergedCas = uimaEEEngine.getCAS();
+		// append document text
+		String docText = cas.getDocumentText();
+		int prevDocLen = mDocBuf.length();
+		mDocBuf.append(docText);
+		// copy specified annotation types
+		// CasCopier takes two args: the CAS to copy from.
+		// the CAS to copy into.
+		CasCopier copier = new CasCopier(cas, mMergedCas);
+		// needed in case one annotation is in two indexes (could
+		// happen if specified annotation types overlap)
+		Set copiedIndexedFs = new HashSet();
+		for (int i = 0; i < listeAnnotations.size(); i++) {
+			Type type = mMergedCas.getTypeSystem().getType(
+					listeAnnotations.get(i));
+			FSIndex index = cas.getAnnotationIndex(type);
+			Iterator iter = index.iterator();
+			while (iter.hasNext()) {
+				FeatureStructure fs = (FeatureStructure) iter.next();
+				if (!copiedIndexedFs.contains(fs)) {
+					Annotation copyOfFs = (Annotation) copier.copyFs(fs);
+					// update begin and end
+					copyOfFs.setBegin(copyOfFs.getBegin() + prevDocLen);
+					copyOfFs.setEnd(copyOfFs.getEnd() + prevDocLen);
+					mMergedCas.addFsToIndexes(copyOfFs);
+					copiedIndexedFs.add(fs);
+				}
+			}
+		}
+		return mMergedCas;
+	}
 }
-
