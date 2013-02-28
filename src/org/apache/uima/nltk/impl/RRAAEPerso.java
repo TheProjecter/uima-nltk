@@ -56,8 +56,11 @@ import org.apache.uima.jcas.tcas.Annotation;
 import org.apache.uima.nltk.utils.Cas2ArrayListString;
 import org.apache.uima.resource.ResourceProcessException;
 import org.apache.uima.util.CasCopier;
+import org.apache.uima.util.CasCreationUtils;
 import org.apache.uima.util.ProcessTraceEvent;
 import org.apache.uima.util.XMLInputSource;
+
+import sun.org.mozilla.javascript.optimizer.ClassCompiler;
 
 /**
  * Example application that calls a Remote Asynchronous Analysis Engine on a
@@ -112,7 +115,7 @@ public class RRAAEPerso extends Observable {
 	// tcp://Alex-VAIO:61616)
 	private String brokerUrl = "tcp://localhost:61616";
 
-	private String endpoint;
+	// private String endpoint;
 
 	private File collectionReaderDescriptor = new File(
 			"descriptors/collection_reader/FileSystemCollectionReaderOurRunRemoteAsyncAE.xml");
@@ -120,8 +123,6 @@ public class RRAAEPerso extends Observable {
 	private int casPoolSize = 50;
 
 	private int fsHeapSize = 2000000;
-
-	private File outputDir = null;
 
 	private int timeout = 0;
 
@@ -133,16 +134,16 @@ public class RRAAEPerso extends Observable {
 
 	private boolean logCas = false;
 
-	private int indexCas = 0;
+	private ArrayList<String> listeInstr;
 
-	private ArrayList<CAS> listeCas;
+	private HashMap<String, Integer> avancementInstr;
 
 	/**
 	 * Start time of the processing - used to compute elapsed time.
 	 */
 	private static long mStartTime = System.nanoTime() / 1000000;
 
-	private UimaAsynchronousEngine uimaEEEngine = null;
+	private ArrayList<UimaAsynchronousEngine> engines = new ArrayList<UimaAsynchronousEngine>();
 
 	Map<String, Object> appCtx;
 
@@ -159,9 +160,7 @@ public class RRAAEPerso extends Observable {
 	 *            description
 	 */
 
-	public RRAAEPerso(String endpoint, ArrayList<CAS> listeCas)
-			throws Exception {
-		this.endpoint = endpoint;
+	public RRAAEPerso(ArrayList<String> listeInstructions) throws Exception {
 		appCtx = new HashMap<String, Object>();
 		appCtx.put(UimaAsynchronousEngine.DD2SpringXsltFilePath,
 				System.getenv("UIMA_HOME") + "/bin/dd2spring.xsl");
@@ -169,37 +168,39 @@ public class RRAAEPerso extends Observable {
 				"file:" + System.getenv("UIMA_HOME") + "/saxon/saxon8.jar");
 		System.setProperty("defaultBrokerURL", brokerUrl);
 
-		this.listeCas = listeCas;
-		System.out.println("RRAE: " + listeCas.isEmpty());
+		// Création des engines
+		for (String instr : listeInstructions) {
+			engines.add(new BaseUIMAAsynchronousEngine_impl());
+		}
+		this.listeInstr = listeInstructions;
 
-		uimaEEEngine = new BaseUIMAAsynchronousEngine_impl();
-
-		// TODO VERIFY IT
-		// uimaEEEngine.deploy(deployementDescriptor, appCtx);
+		// HashMap qui servira à determiner quel est le prochain engine qu'un
+		// CAS doit subir
+		// La clef corespond au texte du CAS (je n'ai pas trouvé de meilleur
+		// solution pour pouvoir reconnaitre un cas)
+		// La valeur corespond à l'index de la liste engines que le CAS vient de
+		// subir
+		this.avancementInstr = new HashMap<String, Integer>();
 
 	}
 
 	public void run() throws Exception {
 		// add Collection Reader if specified
-		if (listeCas.isEmpty()) {
-			System.out.println("Recupération avec Collection Reader");
-			CollectionReaderDescription collectionReaderDescription = UIMAFramework
-					.getXMLParser().parseCollectionReaderDescription(
-							new XMLInputSource(collectionReaderDescriptor));
+		System.out.println("Recupération avec Collection Reader");
+		CollectionReaderDescription collectionReaderDescription = UIMAFramework
+				.getXMLParser().parseCollectionReaderDescription(
+						new XMLInputSource(collectionReaderDescriptor));
 
-			CollectionReader collectionReader = UIMAFramework
-					.produceCollectionReader(collectionReaderDescription);
-			uimaEEEngine.setCollectionReader(collectionReader);
-		}
-
-		uimaEEEngine
-				.addStatusCallbackListener(new StatusCallbackListenerImpl());
+		CollectionReader collectionReader = UIMAFramework
+				.produceCollectionReader(collectionReaderDescription);
+		// Le premier engine traite avec le collection Reader (le CAS n'est pas
+		// encore présent à ce moment)
+		engines.get(0).setCollectionReader(collectionReader);
 
 		// set server URI and Endpoint
 		// Add Broker URI
 		appCtx.put(UimaAsynchronousEngine.ServerUri, brokerUrl);
-		// Add Queue Name
-		appCtx.put(UimaAsynchronousEngine.Endpoint, endpoint);
+
 		// Add timeouts (UIMA EE expects it in milliseconds, but we use seconds
 		// on the command line)
 		appCtx.put(UimaAsynchronousEngine.Timeout, timeout * 1000);
@@ -212,27 +213,23 @@ public class RRAAEPerso extends Observable {
 		appCtx.put(UIMAFramework.CAS_INITIAL_HEAP_SIZE,
 				Integer.valueOf(fsHeapSize / 4).toString());
 
-		// initialize
-		uimaEEEngine.initialize(appCtx);
+		// On ajoute un callback à chaque enggine
+		// Et on les initialise tous
+		int i = 0;
+		for (UimaAsynchronousEngine engine : engines) {
+			engine.addStatusCallbackListener(new StatusCallbackListenerImpl());
 
-		// run
-		if (listeCas.isEmpty()) {
-			uimaEEEngine.process();
+			// On fait une copie de appCtx auquel on ajoute l'enpoint.
+			Map<String, Object> appCtxCpy = new HashMap<String, Object>();
+			appCtxCpy.putAll(appCtx);
+			appCtxCpy.put(UimaAsynchronousEngine.Endpoint, listeInstr.get(i));
+			engine.initialize(appCtxCpy);
+			i++;
 		}
 
-		if (!listeCas.isEmpty()) {
-			System.out.println("Récuperation avec liste CAS");
-			uimaEEEngine.sendCAS(listeCas.get(indexCas));
-		}
-
-		// send an empty CAS
-		/*
-		 * CAS cas = uimaEEEngine.getCAS(); uimaEEEngine.sendCAS(cas);
-		 * uimaEEEngine.collectionProcessingComplete();
-		 */
-		if (listeCas.isEmpty()) {
-			uimaEEEngine.stop();
-		}
+		// Process sur le 1er engine (c'est le seul à utiliser le collection
+		// Reader)
+		engines.get(0).process();
 
 	}
 
@@ -267,7 +264,10 @@ public class RRAAEPerso extends Observable {
 
 		private void stop() {
 			try {
-				uimaEEEngine.stop();
+				for (UimaAsynchronousEngine engine : engines) {
+					engine.stop();
+				}
+
 			} catch (Exception e) {
 
 			}
@@ -300,13 +300,14 @@ public class RRAAEPerso extends Observable {
 			long elapsedTime = System.nanoTime() / 1000000 - mStartTime;
 			System.out.println("Time Elapsed : " + elapsedTime + " ms ");
 
-			String perfReport = uimaEEEngine.getPerformanceReport();
-			if (perfReport != null) {
-				System.out
-						.println("\n\n ------------------ PERFORMANCE REPORT ------------------\n");
-				System.out.println(uimaEEEngine.getPerformanceReport());
-			}
-
+			// à voir plus tard de ce qu'on en fait ...
+			// Remplacer uimaEEEngine par listeEngine(0) ?
+			// String perfReport = uimaEEEngine.getPerformanceReport();
+			/*
+			 * if (perfReport != null) { System.out .println(
+			 * "\n\n ------------------ PERFORMANCE REPORT ------------------\n"
+			 * ); System.out.println(uimaEEEngine.getPerformanceReport()); }
+			 */
 			// stop the JVM.
 			// stop();
 		}
@@ -322,28 +323,29 @@ public class RRAAEPerso extends Observable {
 		 *            events for aEntity
 		 */
 		public void entityProcessComplete(CAS aCas, EntityProcessStatus aStatus) {
+			String clef = aCas.getDocumentText();
+			System.out.println("arrivé dans l'entity process");
+			boolean stop = true;
+			int val;
+			// Si la clef (qui corespond au texte du cas n'est pas présent dans
+			// la HashMap
+			if (!avancementInstr.containsKey(clef)) {
+				// L'engine numéro 0 vient d'être effectué, on passe donc au
+				// numéro 1
+				avancementInstr.put(new String(aCas.getDocumentText()), 1);
+				val = 1;
+				// Sinon on passe à l'engine suivant
+			} else {
+				val = avancementInstr.get(clef) + 1;
 
-			System.out.println(aCas);
-			// A chaque fois qu'un fichié a été traité, on notifie le pipeline
-			// qui va recuperer le fichier
-			setChanged();
-		/*	HashMap<String, CAS> map = new HashMap<String, CAS>();
-			try {
-				map.put("casVide", uimaEEEngine.getCAS());
-			} catch (Exception e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+				avancementInstr.put(clef, val);
 			}
-			map.put("casPlein", aCas);*/
-			/*
-			try {
-				notifyObservers(getCopyCas(aCas));
+			// Si c'est n'est pas le dernier traitement qui vient d'être réalisé
+			// on met stop à false
+			if (engines.size() > val) {
+				stop = false;
+			}
 
-			} catch (Exception e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-*/
 			if (aStatus != null) {
 
 				if (aStatus.isException()) {
@@ -392,10 +394,6 @@ public class RRAAEPerso extends Observable {
 				}
 			}
 
-			// TODO TRAITER LES ANNOTATIONS
-			ArrayList<String> listOfWords = Cas2ArrayListString
-					.fromCas2ArrayString4Sentence(aCas);
-
 			// System.out.println(listOfWords.toString());
 
 			// update stats
@@ -405,27 +403,28 @@ public class RRAAEPerso extends Observable {
 				size += docText.length();
 			}
 
-			// Called just before sendCas with next CAS from collection reader
-			if (!listeCas.isEmpty()) {
-				indexCas++;
-				if (indexCas < listeCas.size()) {
-					try {
-						uimaEEEngine.sendCAS(listeCas.get(indexCas));
-					} catch (ResourceProcessException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				} else {
-					setChanged();
-					notifyObservers("stop");
-					try {
-						uimaEEEngine.stop();
-					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+			// Si non stop, on envoie le CAS à l'engine
+			if (!stop) {
+				UimaAsynchronousEngine engine = engines.get(avancementInstr
+						.get(aCas.getDocumentText()));
+				try {
+					//Avec notre méthode getCopyCas
+					//engine.sendCAS(getCopyCas(aCas, engine));
+					
+					//Avec la classe statique ClassCopier
+					//CAS copyCas = engine.getCAS();
+					//CasCopier.copyCas(aCas, copyCas, true);
+					//engine.sendCAS(copyCas);
+					
+					//Lorsqu'on envoie aCas
+					engine.sendCAS(aCas);
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
 				}
+
 			}
+
 		}
 
 		public void onBeforeMessageSend(UimaASProcessStatus status) {
@@ -446,22 +445,29 @@ public class RRAAEPerso extends Observable {
 
 	}
 
-	public CAS getCopyCas(CAS cas) throws Exception {
+	public CAS getCopyCas(CAS cas, UimaAsynchronousEngine engine)
+			throws Exception {
 
 		ArrayList<String> listeAnnotations = new ArrayList<String>();
 		AnnotationIndex<AnnotationFS> annotIndex = cas.getAnnotationIndex();
+
 		FSIterator<AnnotationFS> iterr = annotIndex.iterator();
+
 		System.out.println("pouet");
-		while(iterr.hasNext()){
+		System.out.println("DEPUIS CAS");
+		// System.out.println(cas.getDocumentText());
+
+		while (iterr.hasNext()) {
 			String annot = iterr.get().getType().toString();
-			if(!listeAnnotations.contains(annot)){
+			if (!listeAnnotations.contains(annot)) {
 				listeAnnotations.add(annot);
 			}
 			iterr.moveToNext();
 		}
+
 		// procure a new CAS if we don't have one already
 		StringBuffer mDocBuf = new StringBuffer();
-		CAS mMergedCas = uimaEEEngine.getCAS();
+		CAS mMergedCas = engine.getCAS();
 		// append document text
 		String docText = cas.getDocumentText();
 		int prevDocLen = mDocBuf.length();
@@ -473,23 +479,41 @@ public class RRAAEPerso extends Observable {
 		// needed in case one annotation is in two indexes (could
 		// happen if specified annotation types overlap)
 		Set copiedIndexedFs = new HashSet();
+
+		// CasCopier.copyCas(cas, mMergedCas, true);
+		// mMergedCas.setDocumentText(cas.getDocumentText());
+		// System.out.println("DEPUIS MERGED CAS");
+		// mMergedCas.getDocumentText();
+
 		for (int i = 0; i < listeAnnotations.size(); i++) {
+			System.out.println(listeAnnotations.get(i));
 			Type type = mMergedCas.getTypeSystem().getType(
 					listeAnnotations.get(i));
-			FSIndex index = cas.getAnnotationIndex(type);
-			Iterator iter = index.iterator();
-			while (iter.hasNext()) {
-				FeatureStructure fs = (FeatureStructure) iter.next();
-				if (!copiedIndexedFs.contains(fs)) {
-					Annotation copyOfFs = (Annotation) copier.copyFs(fs);
-					// update begin and end
-					copyOfFs.setBegin(copyOfFs.getBegin() + prevDocLen);
-					copyOfFs.setEnd(copyOfFs.getEnd() + prevDocLen);
-					mMergedCas.addFsToIndexes(copyOfFs);
-					copiedIndexedFs.add(fs);
+			if (null != type) {
+
+				FSIndex index = cas.getAnnotationIndex(type);
+				Iterator iter = index.iterator();
+
+				while (iter.hasNext()) {
+					FeatureStructure fs = (FeatureStructure) iter.next();
+					if (!copiedIndexedFs.contains(fs)) {
+
+						AnnotationFS copyOfFs = (AnnotationFS) copier
+								.copyFs(fs);
+						// update begin and end
+						// copyOfFs.setBegin(copyOfFs.getBegin() + prevDocLen);
+						// copyOfFs.setEnd(copyOfFs.getEnd() + prevDocLen);
+						System.out.print("--FS--");
+						mMergedCas.addFsToIndexes(copyOfFs);
+						copiedIndexedFs.add(fs);
+					}
 				}
+				System.out.println();
+
 			}
 		}
+		mMergedCas.setDocumentText(cas.getDocumentText());
 		return mMergedCas;
 	}
+
 }

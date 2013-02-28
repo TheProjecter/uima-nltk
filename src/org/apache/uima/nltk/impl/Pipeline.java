@@ -4,64 +4,34 @@ import java.util.ArrayList;
 import java.util.Observable;
 import java.util.Observer;
 
-import org.apache.uima.cas.CAS;
 
 public class Pipeline implements Observer{
 
 	private ArrayList<String> listeInstr;
-	private ArrayList<CAS> listeCAS;
 	private RRAAEPerso rrae;
 	
+	
 	public Pipeline(String... instructions) throws Exception{
-		listeCAS = new ArrayList<CAS>();
 		listeInstr = new ArrayList<String>();
 		for(String instr: instructions){
-			listeInstr.add(instr);
+			if("lemmatisation".equals(instr)){
+				listeInstr.add("EnPOSTaggerQueue");
+			}else if("decoupage_phrase".equals(instr)){
+				listeInstr.add("WhitespaceTokenizerQueue");
+			}
+			
 		}
 	}
 	
 	public void run() throws Exception{
-		for(String instr: listeInstr){
-			ArrayList<CAS> sauveCas = new ArrayList<CAS>();
-			sauveCas.addAll(listeCAS);
-			listeCAS.clear();
-			if("lemmatisation".equals(instr)){
-				this.lemmatisation(sauveCas);
-
-			}else if("decoupage_phrase".equals(instr)){
-				this.decoupagePhrase(sauveCas);
-			}
-		}
-
-	}
-	
-	private void decoupagePhrase(ArrayList<CAS> sauveCas) throws Exception {
-		/* On met les param par défaut de ce traitement */
-		rrae = new RRAAEPerso("WhitespaceTokenizerQueue", sauveCas);
-		rrae.addObserver(this);
+		rrae = new RRAAEPerso(listeInstr);
 		rrae.run();
+
 	}
 
-	public void lemmatisation(ArrayList<CAS> sauveCas) throws Exception{
-		/* On met les param par défaut de ce traitement */
-		rrae = new RRAAEPerso("EnPOSTaggerQueue",sauveCas);
-		rrae.addObserver(this);
-		rrae.run();
-	}
 
 	@Override
 	public void update(Observable arg0, Object arg1){
-	/*	HashMap<String, CAS> map = (HashMap<String, CAS>) arg1;
-		
-		CasCopier.copyCas(map.get("casPlein"),map.get("casVide"), true);
-		listeCAS.add(map.get("casVide"));
-		System.out.println("CAS vide ?");
-		System.out.println(listeCAS.get(0).getDocumentText() == null);
-	*/
-		if(arg1 != null){
-			listeCAS.add((CAS) arg1);
-		}else{
-			System.out.println("C'est null !");
-		}
+
 	}
 }
