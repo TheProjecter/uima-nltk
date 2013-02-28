@@ -323,11 +323,10 @@ public class RRAAEPerso extends Observable {
 		 */
 		public void entityProcessComplete(CAS aCas, EntityProcessStatus aStatus) {
 
-			System.out.println(aCas);
 			// A chaque fois qu'un fichié a été traité, on notifie le pipeline
 			// qui va recuperer le fichier
 			setChanged();
-		/*	HashMap<String, CAS> map = new HashMap<String, CAS>();
+			/*HashMap<String, CAS> map = new HashMap<String, CAS>();
 			try {
 				map.put("casVide", uimaEEEngine.getCAS());
 			} catch (Exception e1) {
@@ -335,7 +334,7 @@ public class RRAAEPerso extends Observable {
 				e1.printStackTrace();
 			}
 			map.put("casPlein", aCas);*/
-			/*
+			
 			try {
 				notifyObservers(getCopyCas(aCas));
 
@@ -343,7 +342,7 @@ public class RRAAEPerso extends Observable {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-*/
+
 			if (aStatus != null) {
 
 				if (aStatus.isException()) {
@@ -450,8 +449,9 @@ public class RRAAEPerso extends Observable {
 
 		ArrayList<String> listeAnnotations = new ArrayList<String>();
 		AnnotationIndex<AnnotationFS> annotIndex = cas.getAnnotationIndex();
+		
 		FSIterator<AnnotationFS> iterr = annotIndex.iterator();
-		System.out.println("pouet");
+		
 		while(iterr.hasNext()){
 			String annot = iterr.get().getType().toString();
 			if(!listeAnnotations.contains(annot)){
@@ -459,6 +459,7 @@ public class RRAAEPerso extends Observable {
 			}
 			iterr.moveToNext();
 		}
+		
 		// procure a new CAS if we don't have one already
 		StringBuffer mDocBuf = new StringBuffer();
 		CAS mMergedCas = uimaEEEngine.getCAS();
@@ -473,23 +474,33 @@ public class RRAAEPerso extends Observable {
 		// needed in case one annotation is in two indexes (could
 		// happen if specified annotation types overlap)
 		Set copiedIndexedFs = new HashSet();
+		System.out.println("ENDPOINT   =   "+endpoint);
 		for (int i = 0; i < listeAnnotations.size(); i++) {
+			System.out.println("Annotation a copier    =    "+listeAnnotations.get(i));
 			Type type = mMergedCas.getTypeSystem().getType(
 					listeAnnotations.get(i));
+			if(null!= type){
+
 			FSIndex index = cas.getAnnotationIndex(type);
 			Iterator iter = index.iterator();
+			
 			while (iter.hasNext()) {
 				FeatureStructure fs = (FeatureStructure) iter.next();
 				if (!copiedIndexedFs.contains(fs)) {
-					Annotation copyOfFs = (Annotation) copier.copyFs(fs);
+					
+					AnnotationFS copyOfFs = (AnnotationFS) copier.copyFs(fs);
 					// update begin and end
-					copyOfFs.setBegin(copyOfFs.getBegin() + prevDocLen);
-					copyOfFs.setEnd(copyOfFs.getEnd() + prevDocLen);
+					//copyOfFs.setBegin(copyOfFs.getBegin() + prevDocLen);
+					//copyOfFs.setEnd(copyOfFs.getEnd() + prevDocLen);
 					mMergedCas.addFsToIndexes(copyOfFs);
 					copiedIndexedFs.add(fs);
 				}
 			}
+			
+			}
 		}
+		mMergedCas.setDocumentText(cas.getDocumentText());
+		System.out.println("Le Cas Original et le nouveau sont le meme?  =   "+cas.equals(mMergedCas));
 		return mMergedCas;
 	}
 }

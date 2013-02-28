@@ -58,10 +58,7 @@ public class Pipeline implements Observer{
 		System.out.println("CAS vide ?");
 		System.out.println(listeCAS.get(0).getDocumentText() == null);
 	*/
-		if(arg1 != null){
-			listeCAS.add((CAS) arg1);
-		}else{
-			System.out.println("C'est null !");
-		}
+		CAS cas =(CAS) arg1;
+		listeCAS.add(cas);
 	}
 }
