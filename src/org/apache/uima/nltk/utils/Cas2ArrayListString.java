@@ -3,6 +3,7 @@ package org.apache.uima.nltk.utils;
 import java.util.ArrayList;
 import org.apache.uima.cas.CAS;
 import org.apache.uima.cas.FSIterator;
+import org.apache.uima.cas.Feature;
 import org.apache.uima.cas.text.AnnotationFS;
 import org.apache.uima.cas.text.AnnotationIndex;
 
