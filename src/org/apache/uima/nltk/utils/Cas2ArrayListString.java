@@ -16,18 +16,18 @@ public class Cas2ArrayListString {
 		String text = aCas.getDocumentText();
 		
 		AnnotationIndex<AnnotationFS> annotIndex = aCas.getAnnotationIndex();
-		FSIterator<AnnotationFS> truc = annotIndex.iterator();
+		FSIterator<AnnotationFS> iter = annotIndex.iterator();
 		
 		
 		
-		while(truc.hasNext())
+		while(iter.hasNext())
 		{
-			if(truc.get().getType().toString().equals("org.apache.uima.TokenAnnotation"))
+			if(iter.get().getType().toString().equals("org.apache.uima.TokenAnnotation"))
 			{
-				array.add(text.substring(truc.get().getBegin(), truc.get().getEnd()));
+				array.add(text.substring(iter.get().getBegin(), iter.get().getEnd()));
 			}
 			
-			truc.moveToNext();
+			iter.moveToNext();
 		}
 		
 			
@@ -48,22 +48,51 @@ public class Cas2ArrayListString {
 		String text = aCas.getDocumentText();
 		
 		AnnotationIndex<AnnotationFS> annotIndex = aCas.getAnnotationIndex();
-		FSIterator<AnnotationFS> truc = annotIndex.iterator();
+		FSIterator<AnnotationFS> iter = annotIndex.iterator();
 		
 		
 		
-		while(truc.hasNext())
+		while(iter.hasNext())
 		{
-			if(truc.get().getType().toString().equals("org.apache.uima.SentenceAnnotation"))
+			if(iter.get().getType().toString().equals("org.apache.uima.SentenceAnnotation"))
 			{
-				array.add(text.substring(truc.get().getBegin(), truc.get().getEnd()));
+				array.add(text.substring(iter.get().getBegin(), iter.get().getEnd()));
 			}
 			
-			truc.moveToNext();
+			iter.moveToNext();
 		}
 		
 			
 		return array;
 	}
 	
+	public static ArrayList<ArrayList<String>> fromCas2ArrayString4Postag(CAS aCas)
+	{
+		ArrayList<ArrayList<String>> array = new ArrayList<ArrayList<String>>();
+				
+		String text = aCas.getDocumentText();
+		
+		AnnotationIndex<AnnotationFS> annotIndex = aCas.getAnnotationIndex();
+		FSIterator<AnnotationFS> iter = annotIndex.iterator();
+		
+		
+		
+		while(iter.hasNext())
+		{
+			if(iter.get().getType().toString().equals("org.apache.uima.TokenAnnotation"))
+			{
+				ArrayList<String> temp = new ArrayList<String>();
+				
+				
+				
+				temp.add(text.substring(iter.get().getBegin(), iter.get().getEnd()));
+				array.add(temp);
+			}
+			
+			iter.moveToNext();
+		}
+		
+			
+		return array;
+	}
 }
