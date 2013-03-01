@@ -487,7 +487,7 @@ public class RRAAEPerso extends Observable {
 			}else{
 				setChanged();
 				notifyObservers(aCas);
-				PrintAnnotations.printAnnotations(aCas, System.out);
+				
 			}
 
 		}
