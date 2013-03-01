@@ -51,6 +51,7 @@ import org.apache.uima.cas.text.AnnotationIndex;
 import org.apache.uima.collection.CollectionReader;
 import org.apache.uima.collection.CollectionReaderDescription;
 import org.apache.uima.collection.EntityProcessStatus;
+import org.apache.uima.examples.PrintAnnotations;
 import org.apache.uima.jcas.cas.StringArray;
 import org.apache.uima.jcas.tcas.Annotation;
 import org.apache.uima.nltk.utils.Cas2ArrayListString;
