@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import org.apache.uima.cas.CAS;
 import org.apache.uima.cas.FSIterator;
 import org.apache.uima.cas.Feature;
+import org.apache.uima.cas.Type;
 import org.apache.uima.cas.text.AnnotationFS;
 import org.apache.uima.cas.text.AnnotationIndex;
 
@@ -84,9 +85,12 @@ public class Cas2ArrayListString {
 			{
 				ArrayList<String> temp = new ArrayList<String>();
 				
-				
+				Type type = iter.get().getType();
+				Feature feat = type.getFeatureByBaseName("posTag");
 				
 				temp.add(text.substring(iter.get().getBegin(), iter.get().getEnd()));
+				temp.add(iter.get().getStringValue(feat));
+								
 				array.add(temp);
 			}
 			

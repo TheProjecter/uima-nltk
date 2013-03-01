@@ -47,10 +47,13 @@ public class Pipeline implements Observer{
 		if(listeInstr.contains("decoupage_mot")){
 			
 		}
-		ArrayList<String> res = Cas2ArrayListString.fromCas2ArrayString4Tokenization(cas);
+		/*ArrayList<String> res = Cas2ArrayListString.fromCas2ArrayString4Tokenization(cas);
 
 		for(String s: res){
 			System.out.println(s);
-		}
+		}*/
+		ArrayList<ArrayList<String>> res = new ArrayList<ArrayList<String>>();
+		res=Cas2ArrayListString.fromCas2ArrayString4Postag(cas);
+		System.out.println(res);
 	}
 }
