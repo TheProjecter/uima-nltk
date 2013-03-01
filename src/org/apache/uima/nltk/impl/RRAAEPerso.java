@@ -70,8 +70,6 @@ import org.apache.uima.util.ProcessTraceEvent;
 import org.apache.uima.util.XMLInputSource;
 import org.xml.sax.SAXException;
 
-import sun.org.mozilla.javascript.optimizer.ClassCompiler;
-
 /**
  * Example application that calls a Remote Asynchronous Analysis Engine on a
  * collection.
