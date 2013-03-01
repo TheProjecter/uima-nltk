@@ -335,6 +335,7 @@ public class RRAAEPerso extends Observable {
 		 *            events for aEntity
 		 */
 		public void entityProcessComplete(CAS aCas, EntityProcessStatus aStatus) {
+			
 			String clef = aCas.getDocumentText();
 			System.out.println("arrivé dans l'entity process");
 			boolean stop = true;
@@ -486,7 +487,9 @@ public class RRAAEPerso extends Observable {
 				}
 			//Si c'est la fin
 			}else{
-
+				setChanged();
+				notifyObservers(aCas);
+				PrintAnnotations.printAnnotations(aCas, System.out);
 			}
 
 		}
