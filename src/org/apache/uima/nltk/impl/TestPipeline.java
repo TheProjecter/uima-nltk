@@ -4,7 +4,7 @@ public class TestPipeline {
 
 	public static void main(String args[]) throws Exception{
 
-		Pipeline p = new Pipeline("decoupage_phrase","lemmatisation");
+		Pipeline p = new Pipeline("decoupage_mot","lemmatisation");
 		p.run();
 	}
 }
