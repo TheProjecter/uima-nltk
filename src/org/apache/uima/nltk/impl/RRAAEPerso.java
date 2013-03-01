@@ -20,7 +20,10 @@ package org.apache.uima.nltk.impl;
  */
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -45,6 +48,8 @@ import org.apache.uima.cas.Feature;
 import org.apache.uima.cas.FeatureStructure;
 import org.apache.uima.cas.StringArrayFS;
 import org.apache.uima.cas.Type;
+import org.apache.uima.cas.TypeSystem;
+import org.apache.uima.cas.impl.XmiCasDeserializer;
 import org.apache.uima.cas.impl.XmiCasSerializer;
 import org.apache.uima.cas.text.AnnotationFS;
 import org.apache.uima.cas.text.AnnotationIndex;
@@ -55,11 +60,15 @@ import org.apache.uima.examples.PrintAnnotations;
 import org.apache.uima.jcas.cas.StringArray;
 import org.apache.uima.jcas.tcas.Annotation;
 import org.apache.uima.nltk.utils.Cas2ArrayListString;
+import org.apache.uima.resource.ResourceInitializationException;
 import org.apache.uima.resource.ResourceProcessException;
+import org.apache.uima.resource.metadata.TypeSystemDescription;
 import org.apache.uima.util.CasCopier;
 import org.apache.uima.util.CasCreationUtils;
+import org.apache.uima.util.InvalidXMLException;
 import org.apache.uima.util.ProcessTraceEvent;
 import org.apache.uima.util.XMLInputSource;
+import org.xml.sax.SAXException;
 
 import sun.org.mozilla.javascript.optimizer.ClassCompiler;
 
@@ -130,6 +139,8 @@ public class RRAAEPerso extends Observable {
 	private int getmeta_timeout = 60;
 
 	private int cpc_timeout = 0;
+
+	private File outputDir = new File("data/output");
 
 	private boolean ignoreErrors = false;
 
@@ -408,21 +419,73 @@ public class RRAAEPerso extends Observable {
 			if (!stop) {
 				UimaAsynchronousEngine engine = engines.get(avancementInstr
 						.get(aCas.getDocumentText()));
+				File outFile = new File(outputDir, "doc" + entityCount);
+
 				try {
-					//Avec notre méthode getCopyCas
-					//engine.sendCAS(getCopyCas(aCas, engine));
-					
-					//Avec la classe statique ClassCopier
-					//CAS copyCas = engine.getCAS();
-					//CasCopier.copyCas(aCas, copyCas, true);
-					//engine.sendCAS(copyCas);
-					
-					//Lorsqu'on envoie aCas
-					engine.sendCAS(aCas);
+					FileOutputStream outStream = new FileOutputStream(outFile);
+					try {
+						XmiCasSerializer.serialize(aCas, outStream);
+					} finally {
+						outStream.close();
+					}
+				} catch (Exception e) {
+					System.err.println("Could not save CAS to XMI file");
+					e.printStackTrace();
+				}
+
+				// Deserialiser le type du systeme
+				FileInputStream inputStream = null;
+				try {
+					inputStream = new FileInputStream(outFile);
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				final XMLInputSource xmlIn = new XMLInputSource(inputStream,
+						null);
+/*
+				TypeSystemDescription tsDesc = null;
+				try {
+					tsDesc = UIMAFramework.getXMLParser()
+							.parseTypeSystemDescription(xmlIn);
+				} catch (InvalidXMLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+*/
+				// Deserialiser le CAS
+				CAS cas = null;
+				try {
+					cas = CasCreationUtils.createCas(engine.getMetaData());
+				} catch (ResourceInitializationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				try {
+					XmiCasDeserializer.deserialize(inputStream, cas, true);
+				} catch (SAXException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				try {
+					// Avec notre méthode getCopyCas
+					// engine.sendCAS(getCopyCas(aCas, engine));
+
+					// Avec la classe statique ClassCopier
+					// CAS copyCas = engine.getCAS();
+					// CasCopier.copyCas(aCas, copyCas, true);
+					// engine.sendCAS(copyCas);
+
+					engine.sendCAS(cas);
 				} catch (Exception e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
+			//Si c'est la fin
+			}else{
 
 			}
 
@@ -444,77 +507,6 @@ public class RRAAEPerso extends Observable {
 
 		}
 
-	}
-
-	public CAS getCopyCas(CAS cas, UimaAsynchronousEngine engine)
-			throws Exception {
-
-		ArrayList<String> listeAnnotations = new ArrayList<String>();
-		AnnotationIndex<AnnotationFS> annotIndex = cas.getAnnotationIndex();
-
-		FSIterator<AnnotationFS> iterr = annotIndex.iterator();
-
-		System.out.println("pouet");
-		System.out.println("DEPUIS CAS");
-		// System.out.println(cas.getDocumentText());
-
-		while (iterr.hasNext()) {
-			String annot = iterr.get().getType().toString();
-			if (!listeAnnotations.contains(annot)) {
-				listeAnnotations.add(annot);
-			}
-			iterr.moveToNext();
-		}
-
-		// procure a new CAS if we don't have one already
-		StringBuffer mDocBuf = new StringBuffer();
-		CAS mMergedCas = engine.getCAS();
-		// append document text
-		String docText = cas.getDocumentText();
-		int prevDocLen = mDocBuf.length();
-		mDocBuf.append(docText);
-		// copy specified annotation types
-		// CasCopier takes two args: the CAS to copy from.
-		// the CAS to copy into.
-		CasCopier copier = new CasCopier(cas, mMergedCas);
-		// needed in case one annotation is in two indexes (could
-		// happen if specified annotation types overlap)
-		Set copiedIndexedFs = new HashSet();
-
-		// CasCopier.copyCas(cas, mMergedCas, true);
-		// mMergedCas.setDocumentText(cas.getDocumentText());
-		// System.out.println("DEPUIS MERGED CAS");
-		// mMergedCas.getDocumentText();
-
-		for (int i = 0; i < listeAnnotations.size(); i++) {
-			System.out.println(listeAnnotations.get(i));
-			Type type = mMergedCas.getTypeSystem().getType(
-					listeAnnotations.get(i));
-			if (null != type) {
-
-				FSIndex index = cas.getAnnotationIndex(type);
-				Iterator iter = index.iterator();
-
-				while (iter.hasNext()) {
-					FeatureStructure fs = (FeatureStructure) iter.next();
-					if (!copiedIndexedFs.contains(fs)) {
-
-						AnnotationFS copyOfFs = (AnnotationFS) copier
-								.copyFs(fs);
-						// update begin and end
-						// copyOfFs.setBegin(copyOfFs.getBegin() + prevDocLen);
-						// copyOfFs.setEnd(copyOfFs.getEnd() + prevDocLen);
-						System.out.print("--FS--");
-						mMergedCas.addFsToIndexes(copyOfFs);
-						copiedIndexedFs.add(fs);
-					}
-				}
-				System.out.println();
-
-			}
-		}
-		mMergedCas.setDocumentText(cas.getDocumentText());
-		return mMergedCas;
 	}
 
 }

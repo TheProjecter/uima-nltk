@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Observable;
 import java.util.Observer;
 
+import org.apache.uima.cas.CAS;
+import org.apache.uima.nltk.utils.Cas2ArrayListString;
+
 
 public class Pipeline implements Observer{
 
