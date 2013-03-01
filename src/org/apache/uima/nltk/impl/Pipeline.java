@@ -1,67 +1,56 @@
 package org.apache.uima.nltk.impl;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Observable;
 import java.util.Observer;
 
 import org.apache.uima.cas.CAS;
+import org.apache.uima.nltk.utils.Cas2ArrayListString;
+
 
 public class Pipeline implements Observer{
 
 	private ArrayList<String> listeInstr;
-	private ArrayList<CAS> listeCAS;
+	private HashMap<String,ArrayList<Collection>> res;
 	private RRAAEPerso rrae;
 	
+	
+	
 	public Pipeline(String... instructions) throws Exception{
-		listeCAS = new ArrayList<CAS>();
 		listeInstr = new ArrayList<String>();
 		for(String instr: instructions){
-			listeInstr.add(instr);
+			if("lemmatisation".equals(instr)){
+				listeInstr.add("EnPOSTaggerQueue");
+			}else if("decoupage_phrase".equals(instr)){
+				listeInstr.add("WhitespaceTokenizerQueue");
+			}
+			
 		}
 	}
 	
 	public void run() throws Exception{
-		for(String instr: listeInstr){
-			ArrayList<CAS> sauveCas = new ArrayList<CAS>();
-			sauveCas.addAll(listeCAS);
-			listeCAS.clear();
-			if("lemmatisation".equals(instr)){
-				this.lemmatisation(sauveCas);
-
-			}else if("decoupage_phrase".equals(instr)){
-				this.decoupagePhrase(sauveCas);
-			}
-		}
-
-	}
-	
-	private void decoupagePhrase(ArrayList<CAS> sauveCas) throws Exception {
-		/* On met les param par défaut de ce traitement */
-		rrae = new RRAAEPerso("WhitespaceTokenizerQueue", sauveCas);
+		rrae = new RRAAEPerso(listeInstr);
 		rrae.addObserver(this);
 		rrae.run();
+
 	}
 
-	public void lemmatisation(ArrayList<CAS> sauveCas) throws Exception{
-		/* On met les param par défaut de ce traitement */
-		rrae = new RRAAEPerso("EnPOSTaggerQueue",sauveCas);
-		rrae.addObserver(this);
-		rrae.run();
+	public ArrayList<String> getLemmatisation(){
+		return null;
 	}
 
 	@Override
 	public void update(Observable arg0, Object arg1){
-	/*	HashMap<String, CAS> map = (HashMap<String, CAS>) arg1;
-		
-		CasCopier.copyCas(map.get("casPlein"),map.get("casVide"), true);
-		listeCAS.add(map.get("casVide"));
-		System.out.println("CAS vide ?");
-		System.out.println(listeCAS.get(0).getDocumentText() == null);
-	*/
-		if(arg1 != null){
-			listeCAS.add((CAS) arg1);
-		}else{
-			System.out.println("C'est null !");
+		CAS cas = (CAS) arg1;
+		if(listeInstr.contains("decoupage_mot")){
+			
+		}
+		ArrayList<String> res = Cas2ArrayListString.fromCas2ArrayString4Tokenization(cas);
+
+		for(String s: res){
+			System.out.println(s);
 		}
 	}
 }
