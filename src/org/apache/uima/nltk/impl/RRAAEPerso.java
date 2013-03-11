@@ -24,16 +24,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.uima.UIMAFramework;
@@ -42,30 +37,13 @@ import org.apache.uima.aae.client.UimaAsBaseCallbackListener;
 import org.apache.uima.aae.client.UimaAsynchronousEngine;
 import org.apache.uima.adapter.jms.client.BaseUIMAAsynchronousEngine_impl;
 import org.apache.uima.cas.CAS;
-import org.apache.uima.cas.FSIndex;
-import org.apache.uima.cas.FSIterator;
-import org.apache.uima.cas.Feature;
-import org.apache.uima.cas.FeatureStructure;
-import org.apache.uima.cas.StringArrayFS;
-import org.apache.uima.cas.Type;
-import org.apache.uima.cas.TypeSystem;
 import org.apache.uima.cas.impl.XmiCasDeserializer;
 import org.apache.uima.cas.impl.XmiCasSerializer;
-import org.apache.uima.cas.text.AnnotationFS;
-import org.apache.uima.cas.text.AnnotationIndex;
 import org.apache.uima.collection.CollectionReader;
 import org.apache.uima.collection.CollectionReaderDescription;
 import org.apache.uima.collection.EntityProcessStatus;
-import org.apache.uima.examples.PrintAnnotations;
-import org.apache.uima.jcas.cas.StringArray;
-import org.apache.uima.jcas.tcas.Annotation;
-import org.apache.uima.nltk.utils.Cas2ArrayListString;
 import org.apache.uima.resource.ResourceInitializationException;
-import org.apache.uima.resource.ResourceProcessException;
-import org.apache.uima.resource.metadata.TypeSystemDescription;
-import org.apache.uima.util.CasCopier;
 import org.apache.uima.util.CasCreationUtils;
-import org.apache.uima.util.InvalidXMLException;
 import org.apache.uima.util.ProcessTraceEvent;
 import org.apache.uima.util.XMLInputSource;
 import org.xml.sax.SAXException;
@@ -335,11 +313,10 @@ public class RRAAEPerso extends Observable {
 		public void entityProcessComplete(CAS aCas, EntityProcessStatus aStatus) {
 			
 			String clef = aCas.getDocumentText();
-			System.out.println("arrivé dans l'entity process");
 			boolean stop = true;
 			int val;
-			// Si la clef (qui corespond au texte du cas n'est pas présent dans
-			// la HashMap
+			// Si la clef (qui corespond au texte du CAS n'est pas présent dans
+			// la HashMap)
 			if (!avancementInstr.containsKey(clef)) {
 				// L'engine numéro 0 vient d'être effectué, on passe donc au
 				// numéro 1
@@ -418,66 +395,10 @@ public class RRAAEPerso extends Observable {
 			if (!stop) {
 				UimaAsynchronousEngine engine = engines.get(avancementInstr
 						.get(aCas.getDocumentText()));
-				File outFile = new File(outputDir, "doc" + entityCount);
-
+				// On créé une copie du CAS que la méthode EntityProcessComplete a reçu en paramètre
+				CAS cas = copyCas(aCas);
 				try {
-					FileOutputStream outStream = new FileOutputStream(outFile);
-					try {
-						XmiCasSerializer.serialize(aCas, outStream);
-					} finally {
-						outStream.close();
-					}
-				} catch (Exception e) {
-					System.err.println("Could not save CAS to XMI file");
-					e.printStackTrace();
-				}
-
-				// Deserialiser le type du systeme
-				FileInputStream inputStream = null;
-				try {
-					inputStream = new FileInputStream(outFile);
-				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				final XMLInputSource xmlIn = new XMLInputSource(inputStream,
-						null);
-/*
-				TypeSystemDescription tsDesc = null;
-				try {
-					tsDesc = UIMAFramework.getXMLParser()
-							.parseTypeSystemDescription(xmlIn);
-				} catch (InvalidXMLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-*/
-				// Deserialiser le CAS
-				CAS cas = null;
-				try {
-					cas = CasCreationUtils.createCas(engine.getMetaData());
-				} catch (ResourceInitializationException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				try {
-					XmiCasDeserializer.deserialize(inputStream, cas, true);
-				} catch (SAXException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				try {
-					// Avec notre méthode getCopyCas
-					// engine.sendCAS(getCopyCas(aCas, engine));
-
-					// Avec la classe statique ClassCopier
-					// CAS copyCas = engine.getCAS();
-					// CasCopier.copyCas(aCas, copyCas, true);
-					// engine.sendCAS(copyCas);
-
+					//On envoie le Cas pour qu'il soit traité
 					engine.sendCAS(cas);
 				} catch (Exception e1) {
 					// TODO Auto-generated catch block
@@ -485,11 +406,60 @@ public class RRAAEPerso extends Observable {
 				}
 			//Si c'est la fin
 			}else{
+				//Utilisation du design pattern observer pour envoyer le CAS final (avec toute les annotations demandés) au Pipeline
 				setChanged();
 				notifyObservers(aCas);
 				
 			}
 
+		}
+		
+		public CAS copyCas(CAS cas){
+			UimaAsynchronousEngine engine = engines.get(avancementInstr
+					.get(cas.getDocumentText()));
+			File outFile = new File(outputDir, "doc" + entityCount);
+
+			try {
+				FileOutputStream outStream = new FileOutputStream(outFile);
+				try {
+					XmiCasSerializer.serialize(cas, outStream);
+				} finally {
+					outStream.close();
+				}
+			} catch (Exception e) {
+				System.err.println("Could not save CAS to XMI file");
+				e.printStackTrace();
+			}
+
+			// Deserialiser le type du systeme
+			FileInputStream inputStream = null;
+			try {
+				inputStream = new FileInputStream(outFile);
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			final XMLInputSource xmlIn = new XMLInputSource(inputStream,
+					null);
+
+			// Deserialiser le CAS
+			CAS newCas = null;
+			try {
+				newCas = CasCreationUtils.createCas(engine.getMetaData());
+			} catch (ResourceInitializationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			try {
+				XmiCasDeserializer.deserialize(inputStream, newCas, true);
+			} catch (SAXException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return newCas;
 		}
 
 		public void onBeforeMessageSend(UimaASProcessStatus status) {
