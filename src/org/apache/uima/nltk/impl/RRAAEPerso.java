@@ -147,6 +147,8 @@ public class RRAAEPerso extends Observable {
 	private ArrayList<String> listeInstr;
 
 	private HashMap<String, Integer> avancementInstr;
+	
+	private int nbDocFini = 0;
 
 	/**
 	 * Start time of the processing - used to compute elapsed time.
@@ -487,6 +489,17 @@ public class RRAAEPerso extends Observable {
 			}else{
 				setChanged();
 				notifyObservers(aCas);
+				nbDocFini++;
+				if(nbDocFini >= avancementInstr.size()){
+					for(UimaAsynchronousEngine engine: engines){
+						try {
+							engine.stop();
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
 				
 			}
 
