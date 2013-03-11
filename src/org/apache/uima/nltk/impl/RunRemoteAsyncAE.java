@@ -212,7 +212,6 @@ public class RunRemoteAsyncAE extends Observable {
 
 	public void run() throws Exception {
 		// add Collection Reader if specified
-		System.out.println("Recupération avec Collection Reader");
 		CollectionReaderDescription collectionReaderDescription = UIMAFramework
 				.getXMLParser().parseCollectionReaderDescription(
 						new XMLInputSource(collectionReaderDescriptor));
@@ -276,7 +275,6 @@ public class RunRemoteAsyncAE extends Observable {
 		 */
 		public void initializationComplete(EntityProcessStatus aStatus) {
 			if (aStatus != null && aStatus.isException()) {
-				System.err.println("Error on getMeta call to remote service:");
 				List exceptions = aStatus.getExceptions();
 				for (int i = 0; i < exceptions.size(); i++) {
 					((Throwable) exceptions.get(i)).printStackTrace();
@@ -309,22 +307,21 @@ public class RunRemoteAsyncAE extends Observable {
 		public void collectionProcessComplete(EntityProcessStatus aStatus) {
 
 			if (aStatus != null && aStatus.isException()) {
-				System.err
-						.println("Error on collection process complete call to remote service:");
+				//System.err.println("Error on collection process complete call to remote service:");
 				List exceptions = aStatus.getExceptions();
 				for (int i = 0; i < exceptions.size(); i++) {
 					((Throwable) exceptions.get(i)).printStackTrace();
 				}
-				System.err.println("Terminating Client...");
+				//System.err.println("Terminating Client...");
 				stop();
 			}
-			System.out.print("Completed " + entityCount + " documents");
+			//System.out.print("Completed " + entityCount + " documents");
 			if (size > 0) {
-				System.out.print("; " + size + " characters");
+			//	System.out.print("; " + size + " characters");
 			}
 			System.out.println();
 			long elapsedTime = System.nanoTime() / 1000000 - mStartTime;
-			System.out.println("Time Elapsed : " + elapsedTime + " ms ");
+			//System.out.println("Time Elapsed : " + elapsedTime + " ms ");
 
 			// à voir plus tard de ce qu'on en fait ...
 			// Remplacer uimaEEEngine par listeEngine(0) ?
@@ -351,7 +348,6 @@ public class RunRemoteAsyncAE extends Observable {
 		public void entityProcessComplete(CAS aCas, EntityProcessStatus aStatus) {
 			
 			String clef = aCas.getDocumentText();
-			System.out.println("arrivé dans l'entity process");
 			boolean stop = true;
 			int val;
 			// Si la clef (qui corespond au texte du cas n'est pas présent dans
@@ -376,14 +372,13 @@ public class RunRemoteAsyncAE extends Observable {
 			if (aStatus != null) {
 
 				if (aStatus.isException()) {
-					System.err
-							.println("Error on process CAS call to remote service:");
+					//System.err.println("Error on process CAS call to remote service:");
 					List exceptions = aStatus.getExceptions();
 					for (int i = 0; i < exceptions.size(); i++) {
 						((Throwable) exceptions.get(i)).printStackTrace();
 					}
 					if (!ignoreErrors) {
-						System.err.println("Terminating Client...");
+					//	System.err.println("Terminating Client...");
 						stop();
 					}
 				}
@@ -414,14 +409,12 @@ public class RunRemoteAsyncAE extends Observable {
 					}
 
 				} else {
-					System.out.print(".");
 					if (0 == (entityCount + 1) % 50) {
-						System.out.print((entityCount + 1) + " processed\n");
+						//System.out.print((entityCount + 1) + " processed\n");
 					}
 				}
 			}
 
-			// System.out.println(listOfWords.toString());
 
 			// update stats
 			entityCount++;

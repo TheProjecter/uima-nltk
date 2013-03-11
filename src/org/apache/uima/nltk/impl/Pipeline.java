@@ -105,7 +105,6 @@ public class Pipeline extends Observable implements Observer {
 					.get("word");
 			listeWords.add(wordToken);
 			operations.put("word", listeWords);
-			System.out.println("liste des mots ajouté");
 
 			// Tous les traitements des phrases par chaque texte.
 
@@ -117,7 +116,6 @@ public class Pipeline extends Observable implements Observer {
 					.get("sentence");
 			listeSentences.add(sentenceToken);
 			operations.put("sentence", listeSentences);
-			System.out.println("liste des phrases ajouté");
 
 			// Tous les traitements des tags par chaque texte.
 
@@ -128,13 +126,7 @@ public class Pipeline extends Observable implements Observer {
 					.get("tag");
 			listeTag.add(tagToken);
 			operations.put("tag", listeTag);
-			System.out.println("liste des tags ajouté");
 
-			System.out
-					.println("-----------------------------------------------------------------------------------------------");
-//			System.out.println(operations.toString());
-			System.out
-					.println("-----------------------------------------------------------------------------------------------");
 		}
 	}
 }
