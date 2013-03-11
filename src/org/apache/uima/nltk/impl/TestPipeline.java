@@ -7,11 +7,10 @@ public class TestPipeline {
 		p.run();
 		*/
 		
-		UimaNltk uima2 = new UimaNltk();
-		uima2.loadText();
-		while(!uima2.getFinished()){
+		UimaNltk uima = new UimaNltk();
+		uima.loadText();
+		while(!uima.getFinished()){
 			
 		}
-		System.out.println(uima2.getSentenceTokens().toString());
 	}
 }

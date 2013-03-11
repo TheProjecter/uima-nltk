@@ -13,7 +13,7 @@ public class Pipeline extends Observable implements Observer {
 
 	private ArrayList<String> listeEndPoints;
 	private HashMap<String, ArrayList<?>> operations;
-	private RRAAEPerso rrae;
+	private RunRemoteAsyncAE rrae;
 	private ArrayList<String> listInstrs;
 
 	public Pipeline(String... instructions) throws Exception {
@@ -48,7 +48,7 @@ public class Pipeline extends Observable implements Observer {
 	}
 
 	public void run() throws Exception {
-		rrae = new RRAAEPerso(listeEndPoints);
+		rrae = new RunRemoteAsyncAE(listeEndPoints);
 		rrae.addObserver(this);
 		rrae.run();
 

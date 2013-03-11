@@ -117,7 +117,7 @@ import org.xml.sax.SAXException;
  * 2 - LANCER ourRunRemoteAsyncAE.java
  */
 
-public class RRAAEPerso extends Observable {
+public class RunRemoteAsyncAE extends Observable {
 
 	// A initialiser dans le constructer en arguments (valeur attendue
 	// tcp://Alex-VAIO:61616)
@@ -172,7 +172,7 @@ public class RRAAEPerso extends Observable {
 	 *            description
 	 */
 
-	public RRAAEPerso(ArrayList<String> listeInstructions) throws Exception {
+	public RunRemoteAsyncAE(ArrayList<String> listeInstructions) throws Exception {
 		appCtx = new HashMap<String, Object>();
 		appCtx.put(UimaAsynchronousEngine.DD2SpringXsltFilePath,
 				System.getenv("UIMA_HOME") + "/bin/dd2spring.xsl");
