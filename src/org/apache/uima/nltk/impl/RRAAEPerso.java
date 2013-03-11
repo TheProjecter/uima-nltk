@@ -499,6 +499,8 @@ public class RRAAEPerso extends Observable {
 							e.printStackTrace();
 						}
 					}
+					setChanged();
+					notifyObservers(null);
 				}
 				
 			}
