@@ -5,10 +5,37 @@ import java.util.HashMap;
 import java.util.Observable;
 import java.util.Observer;
 
+
+
+/**
+ *  <b>Cas2ArrayListString est une classe "outil" permettant la transformation d'un objet CAS contenant des annotations en un objet de type ArrayList.</b> 
+ *
+ *  
+ *  @author UIMA-NLTK team 
+ *  
+ *  @version 1.0 
+ *  
+ */
 public class UimaNltk implements Observer{
+	
+	/**
+	 * Liste des textes et des mots de chaque texte
+	 */
 	private ArrayList<ArrayList<String>> wordTokens;
+	
+	/**
+	 * Liste des textes et des phrases de chaque texte
+	 */
 	private ArrayList<ArrayList<String>> sentenceTokens;
+	
+	/**
+	 * Liste des textes et des étiquetages grammatiquaux de chaque texte
+	 */
 	private ArrayList<ArrayList<ArrayList<String>>> tagTokens;
+	
+	/**
+	 * Indique si un texte a fini d'etre traité
+	 */
 	private boolean finished = false;
 	
 	
@@ -38,6 +65,11 @@ public class UimaNltk implements Observer{
 		return this.finished;
 	}
 	
+	
+	/**
+	 * Crée un objet Pipeline et lance le traitement des textes
+	 * @throws Exception
+	 */
 	public void loadText() throws Exception{
 		Pipeline p = new Pipeline();
 		p.addObserver(this);
@@ -46,6 +78,10 @@ public class UimaNltk implements Observer{
 	
 	
 	@Override
+	/**	Des qu'un traitement est fini, on met le résultat dans les variables attendues
+	 * @params arg0
+	 * @params arg1
+	 */
 	public void update(Observable arg0, Object arg1) {
 		HashMap<String, ArrayList<?>> operations = (HashMap<String, ArrayList<?>>) arg1;
 		setWordTokens((ArrayList<ArrayList<String>>) operations.get("word"));
