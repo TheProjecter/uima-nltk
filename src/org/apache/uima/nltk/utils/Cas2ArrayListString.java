@@ -68,6 +68,12 @@ public class Cas2ArrayListString {
 		return array;
 	}
 	
+	
+	
+	
+	
+	
+	
 	public static ArrayList<ArrayList<String>> fromCas2ArrayString4Postag(CAS aCas)
 	{
 		ArrayList<ArrayList<String>> array = new ArrayList<ArrayList<String>>();
@@ -100,4 +106,7 @@ public class Cas2ArrayListString {
 			
 		return array;
 	}
+	
+	
+	
 }
