@@ -9,8 +9,8 @@ public class TestPipeline {
 		
 		UimaNltk uima = new UimaNltk();
 		uima.loadText();
-		while(!uima.getFinished()){
-			
-		}
+
+		
+		System.out.println(uima.getWordTokens());
 	}
 }

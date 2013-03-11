@@ -13,18 +13,21 @@ public class UimaNltk implements Observer{
 	
 	
 	public ArrayList<ArrayList<String>> getWordTokens() {
+		while(!getFinished());
 		return wordTokens;
 	}
 	public void setWordTokens(ArrayList<ArrayList<String>> wordTokens) {
 		this.wordTokens = wordTokens;
 	}
 	public ArrayList<ArrayList<String>> getSentenceTokens() {
+		while(!getFinished());
 		return sentenceTokens;
 	}
 	public void setSentenceTokens(ArrayList<ArrayList<String>> sentenceTokens) {
 		this.sentenceTokens = sentenceTokens;
 	}
 	public ArrayList<ArrayList<ArrayList<String>>> getTagTokens() {
+		while(!getFinished());
 		return tagTokens;
 	}
 	public void setTagTokens(ArrayList<ArrayList<ArrayList<String>>> tagTokens) {

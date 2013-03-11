@@ -94,7 +94,7 @@ public class Pipeline extends Observable implements Observer {
 			ArrayList<ArrayList<ArrayList<String>>> listeTag = (ArrayList<ArrayList<ArrayList<String>>>) operations
 					.get("tag");
 			listeTag.add(tagToken);
-			operations.put("word", listeTag);
+			operations.put("tag", listeTag);
 			System.out.println("liste des tags ajouté");
 
 			System.out
