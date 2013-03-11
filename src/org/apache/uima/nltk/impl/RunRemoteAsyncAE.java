@@ -70,10 +70,10 @@ import org.xml.sax.SAXException;
  *  @version 1.0 
  *  
  */
-public class RRAAEPerso extends Observable {
+public class RunRemoteAsyncAE extends Observable {
 
 	/**
-	 * Adresse du broker. Fixée par défaut.
+	 * Adresse du broker. Fixï¿½e par dï¿½faut.
 	 */
 	private String brokerUrl = "tcp://localhost:61616";
 
@@ -153,7 +153,7 @@ public class RRAAEPerso extends Observable {
 	 *            command line arguments into the program - see class
 	 *            description
 	 */
-	public RRAAEPerso(ArrayList<String> listeInstructions) throws Exception {
+	public RunRemoteAsyncAE(ArrayList<String> listeInstructions) throws Exception {
 		appCtx = new HashMap<String, Object>();
 		appCtx.put(UimaAsynchronousEngine.DD2SpringXsltFilePath,
 				System.getenv("UIMA_HOME") + "/bin/dd2spring.xsl");

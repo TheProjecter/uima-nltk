@@ -10,15 +10,15 @@ import org.apache.uima.cas.CAS;
 import org.apache.uima.nltk.utils.Cas2ArrayListString;
 
 /**
- *  <b>Pipeline est la classe envoyant l'ensemble des traitements à réaliser au Run Remote Asynchronous Engine, et récupérant le résultats des traitements.</b> 
- *  	<p> Un objet Pipeline est caractérisé par : 
+ *  <b>Pipeline est la classe envoyant l'ensemble des traitements ï¿½ rï¿½aliser au Run Remote Asynchronous Engine, et rï¿½cupï¿½rant le rï¿½sultats des traitements.</b> 
+ *  	<p> Un objet Pipeline est caractï¿½risï¿½ par : 
  *  		<ul> 
- *  			<li>Une liste de services à utiliser.</li> 
+ *  			<li>Une liste de services ï¿½ utiliser.</li> 
  *  			<li>Un Run Remote Asynchrnous Engine (classe UIMANLTKcore).</li> 
- *     			<li>Une liste d'instructions à traiter.</li> 
+ *     			<li>Une liste d'instructions ï¿½ traiter.</li> 
  *  		 </ul>
  *  	</p>
- *  	<p> Pipeline implémente la classe Observer, à l'image de notre API, implémentant le Design Pattern associé
+ *  	<p> Pipeline implï¿½mente la classe Observer, ï¿½ l'image de notre API, implï¿½mentant le Design Pattern associï¿½
  *  
  *  @see UIMANLTKcore
  *  @see Observer
@@ -38,34 +38,34 @@ public class Pipeline implements Observer{
 	
 	/**
 	 * @deprecated
-	 * Résultat des traitements des fichiers textuels en entrée (vestigial)
+	 * Rï¿½sultat des traitements des fichiers textuels en entrï¿½e (vestigial)
 	 */
 	private HashMap<String,ArrayList<Collection>> res;
 	
 	
 	/**
-	 * Le Run Remote Async Asynchronous Engine personnalisé pour notre API
+	 * Le Run Remote Async Asynchronous Engine personnalisï¿½ pour notre API
 	 */
-	private RRAAEPerso rrae;
+	private RunRemoteAsyncAE rrae;
 	
 	
 	/**
-	 * La liste des instructions lancées par l'utilisateur
+	 * La liste des instructions lancï¿½es par l'utilisateur
 	 */
 	private ArrayList<String> listInstrs;
 	
 	
 	/**
 	 * Constructeur de la classe Pipeline
-	 *   	<p> Lis chaque instruction en entrée et :
+	 *   	<p> Lis chaque instruction en entrï¿½e et :
 	 *  		<ul> 
-	 *  			<li>Ajoute le endpoint correspondant à la liste des endpoints à utiliser.</li> 
-	 *  			<li>Ajoute l'instruction à la liste des instructions à réaliser.</li> 
+	 *  			<li>Ajoute le endpoint correspondant ï¿½ la liste des endpoints ï¿½ utiliser.</li> 
+	 *  			<li>Ajoute l'instruction ï¿½ la liste des instructions ï¿½ rï¿½aliser.</li> 
 	 *  		 </ul>
 	 *  	</p>
 	 *  
 	 * @param instructions
-	 * 		La liste d'instructions (d'opérations) que l'utilisateur veut réaliser sur le texte
+	 * 		La liste d'instructions (d'opï¿½rations) que l'utilisateur veut rï¿½aliser sur le texte
 	 * 
 	 * @throws Exception
 	 */
@@ -94,7 +94,7 @@ public class Pipeline implements Observer{
 	 * @throws Exception
 	 */
 	public void run() throws Exception{
-		rrae = new RRAAEPerso(listeEndPoints);
+		rrae = new RunRemoteAsyncAE(listeEndPoints);
 		rrae.addObserver(this);
 		rrae.run();
 
@@ -104,9 +104,9 @@ public class Pipeline implements Observer{
 
 	@Override
 	/**
-	 * Appelé par le Run Remote Asynchronous Engine lorsqu'un fichier à fini d'être traité.
+	 * Appelï¿½ par le Run Remote Asynchronous Engine lorsqu'un fichier ï¿½ fini d'ï¿½tre traitï¿½.
 	 * @see Observer
-	 * @param arg0, l'objet observé dont vient la notification
+	 * @param arg0, l'objet observï¿½ dont vient la notification
 	 * @param arg1, le CAS final contenant le traitement
 	 */
 	public void update(Observable arg0, Object arg1){
