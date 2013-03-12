@@ -29,12 +29,12 @@ public class UimaNltk implements Observer{
 	private ArrayList<ArrayList<String>> sentenceTokens;
 	
 	/**
-	 * Liste des textes et des étiquetages grammatiquaux de chaque texte
+	 * Liste des textes et des Ã©tiquetages grammatiquaux de chaque texte
 	 */
 	private ArrayList<ArrayList<ArrayList<String>>> tagTokens;
 	
 	/**
-	 * Indique si un texte a fini d'etre traité
+	 * Indique si un texte a fini d'etre traitÃ©
 	 */
 	private boolean finished = false;
 	
@@ -67,7 +67,7 @@ public class UimaNltk implements Observer{
 	
 	
 	/**
-	 * Crée un objet Pipeline et lance le traitement des textes
+	 * CrÃ©e un objet Pipeline et lance le traitement des textes
 	 * @throws Exception
 	 */
 	public void loadText() throws Exception{
@@ -78,7 +78,7 @@ public class UimaNltk implements Observer{
 	
 	
 	@Override
-	/**	Des qu'un traitement est fini, on met le résultat dans les variables attendues
+	/**	Des qu'un traitement est fini, on met le rÃ©sultat dans les variables attendues
 	 * @params arg0
 	 * @params arg1
 	 */

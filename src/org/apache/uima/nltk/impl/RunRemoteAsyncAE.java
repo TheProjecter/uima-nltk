@@ -95,7 +95,7 @@ import org.xml.sax.SAXException;
 public class RunRemoteAsyncAE extends Observable {
 
 	/**
-	 * Adresse du broker. Fixée par défaut.
+	 * Adresse du broker. FixÃ©e par dÃ©faut.
 	 */
 	private String brokerUrl = "tcp://localhost:61616";
 
@@ -147,7 +147,7 @@ public class RunRemoteAsyncAE extends Observable {
 
 	
 	/**
-	 * Nombre de documents deja traités
+	 * Nombre de documents deja traitÃ©s
 	 */
 	private int nbDocFini = 0;
 

@@ -13,9 +13,9 @@ import org.apache.uima.cas.text.AnnotationIndex;
  *  <b>Cas2ArrayListString est une classe "outil" permettant la transformation d'un objet CAS contenant des annotations en un objet de type ArrayList.</b> 
  *  	<p> Cette classe permet les transformatins suivante : 
  *  		<ul> 
- *  			<li>CAS -> ArrayList, avec les annotations correspondant au découpage en mots.</li> 
- *  			<li>CAS -> ArrayList, avec les annotations correspondant au découpage en phrases.</li> 
- *     			<li>CAS -> ArrayList, avec les annotations correspondant à l'étiquetage grammatical.</li> 
+ *  			<li>CAS -> ArrayList, avec les annotations correspondant au dï¿½coupage en mots.</li> 
+ *  			<li>CAS -> ArrayList, avec les annotations correspondant au dï¿½coupage en phrases.</li> 
+ *     			<li>CAS -> ArrayList, avec les annotations correspondant ï¿½ l'ï¿½tiquetage grammatical.</li> 
  *  		 </ul>
  *  	</p>
  *  
@@ -33,12 +33,12 @@ public class Cas2ArrayListString {
 	
 	/**
 	 * Traite un CAS et retourne une liste de mots
-	 * @param aCas, le CAS à traiter
+	 * @param aCas, le CAS ï¿½ traiter
 	 * @return liste de mots
 	 */
 	public static ArrayList<String> fromCas2ArrayString4Tokenization(CAS aCas)
 	{
-		//la liste qui sera retournée
+		//la liste qui sera retournÃ©e
 		ArrayList<String> array = new ArrayList<String>();
 				
 		//le texte contenu dans le CAS
@@ -49,7 +49,7 @@ public class Cas2ArrayListString {
 		FSIterator<AnnotationFS> iter = annotIndex.iterator();
 		
 		
-		//ajout dans la liste du texte correspondant à chaque annotation "TokenAnnotation" => ajout de tous les mots du texte dans la liste
+		//ajout dans la liste du texte correspondant Ã  chaque annotation "TokenAnnotation" => ajout de tous les mots du texte dans la liste
 		while(iter.hasNext())
 		{
 			if(iter.get().getType().toString().equals("org.apache.uima.TokenAnnotation"))
@@ -72,12 +72,12 @@ public class Cas2ArrayListString {
 	
 	/**
 	 * Traite un CAS et retourne une liste de phrase
-	 * @param aCas, le CAS à traiter
+	 * @param aCas, le CAS Ã  traiter
 	 * @return liste de phrases
 	 */
 	public static ArrayList<String> fromCas2ArrayString4Sentence(CAS aCas)
 	{
-		//la liste qui sera retournée
+		//la liste qui sera retournÃ©e
 		ArrayList<String> array = new ArrayList<String>();
 				
 		//le texte contenu dans le CAS
@@ -88,7 +88,7 @@ public class Cas2ArrayListString {
 		FSIterator<AnnotationFS> iter = annotIndex.iterator();
 		
 		
-		//ajout dans la liste du texte correspondant à chaque annotation "SentenceAnnotation" => ajout de toutes les phrases du texte dans la liste
+		//ajout dans la liste du texte correspondant Ã  chaque annotation "SentenceAnnotation" => ajout de toutes les phrases du texte dans la liste
 		while(iter.hasNext())
 		{
 			if(iter.get().getType().toString().equals("org.apache.uima.SentenceAnnotation"))
@@ -110,12 +110,12 @@ public class Cas2ArrayListString {
 	
 	/**
 	 * Traite un CAS et retourne une liste de liste de mots et nature grammaticale
-	 * @param aCas, le CAS à traiter
+	 * @param aCas, le CAS Ã  traiter
 	 * @return liste de liste de mots et nature grammaticale
 	 */
 	public static ArrayList<ArrayList<String>> fromCas2ArrayString4Postag(CAS aCas)
 	{
-		//la liste qui sera retournée
+		//la liste qui sera retournÃ©e
 		ArrayList<ArrayList<String>> array = new ArrayList<ArrayList<String>>();
 				
 		//le texte contenu dans le CAS
@@ -126,14 +126,14 @@ public class Cas2ArrayListString {
 		FSIterator<AnnotationFS> iter = annotIndex.iterator();
 		
 		
-		//ajout dans la liste du texte correspondant à chaque annotation "TokenAnnotation", ainsi que la nature grammaticale de chaque mot
+		//ajout dans la liste du texte correspondant Ã  chaque annotation "TokenAnnotation", ainsi que la nature grammaticale de chaque mot
 		while(iter.hasNext())
 		{
 			if(iter.get().getType().toString().equals("org.apache.uima.TokenAnnotation"))
 			{
 				ArrayList<String> temp = new ArrayList<String>();
 				
-				//repérage du type de "sous annotation" qui correspond à la nature grammaticale
+				//repï¿½rage du type de "sous annotation" qui correspond Ã  la nature grammaticale
 				Type type = iter.get().getType();
 				Feature feat = type.getFeatureByBaseName("posTag");
 				

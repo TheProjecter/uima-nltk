@@ -10,15 +10,15 @@ import org.apache.uima.cas.CAS;
 import org.apache.uima.nltk.utils.Cas2ArrayListString;
 
 /**
- *  <b>Pipeline est la classe envoyant l'ensemble des traitements à réaliser au Run Remote Asynchronous Engine, et récupérant le résultats des traitements.</b> 
- *  	<p> Un objet Pipeline est caractérisé par : 
+ *  <b>Pipeline est la classe envoyant l'ensemble des traitements Ã  rÃ©aliser au Run Remote Asynchronous Engine, et rÃ©cupÃ©rant le rÃ©sultats des traitements.</b> 
+ *  	<p> Un objet Pipeline est caractÃ©risÃ© par : 
  *  		<ul> 
- *  			<li>Une liste de services à utiliser.</li> 
+ *  			<li>Une liste de services Ã  utiliser.</li> 
  *  			<li>Un Run Remote Asynchrnous Engine (classe UIMANLTKcore).</li> 
- *     			<li>Une liste d'instructions à traiter.</li> 
+ *     			<li>Une liste d'instructions Ã  traiter.</li> 
  *  		 </ul>
  *  	</p>
- *  	<p> Pipeline implémente la classe Observer, à l'image de notre API, implémentant le Design Pattern associé
+ *  	<p> Pipeline implÃ©mente la classe Observer, Ã  l'image de notre API, implÃ©mentant le Design Pattern associÃ©
  *  
  *  @see UIMANLTKcore
  *  @see Observer
@@ -36,17 +36,17 @@ public class Pipeline extends Observable implements Observer {
 	private ArrayList<String> listeEndPoints;
 	
 	/**
-	 * Liste des opérations par texte
+	 * Liste des opÃ©rations par texte
 	 */
 	private HashMap<String, ArrayList<?>> operations;
 	
 	/**
-	 * Le Run Remote Async Asynchronous Engine personnalisé pour notre API
+	 * Le Run Remote Async Asynchronous Engine personnalisÃ© pour notre API
 	 */
 	private RunRemoteAsyncAE rrae;
 	
 	/**
-	 * La liste des instructions lancées par l'utilisateur
+	 * La liste des instructions lancÃ©es par l'utilisateur
 	 */
 	private ArrayList<String> listInstrs;
 
@@ -83,9 +83,9 @@ public class Pipeline extends Observable implements Observer {
 
 	@Override
 	/**
-	 * Appelé par le Run Remote Asynchronous Engine lorsqu'un fichier à fini d'être traité.
+	 * Appel Ã  par le Run Remote Asynchronous Engine lorsqu'un fichier Ã  fini d'Ãªtre traitÃ©.
 	 * @see Observer
-	 * @param arg0, l'objet observé dont vient la notification
+	 * @param arg0, l'objet observÃ© dont vient la notification
 	 * @param arg1, le CAS final contenant le traitement
 	 */
 	public void update(Observable arg0, Object arg1) {
