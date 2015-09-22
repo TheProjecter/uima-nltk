@@ -1,0 +1,1 @@
+Providing a business application programming interface (API) for developing Natural Language Processing (NLP) applications (similarly to Python NLTK) over UIMA AS services
